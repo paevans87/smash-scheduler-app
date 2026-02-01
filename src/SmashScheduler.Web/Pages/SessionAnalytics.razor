@@ -1,0 +1,137 @@
+@page "/clubs/{ClubId:guid}/sessions/{SessionId:guid}/analytics"
+@using SmashScheduler.Application.Services.SessionManagement
+@using SmashScheduler.Application.Services.Analytics
+@using SmashScheduler.Application.Services.Analytics.Models
+@using SmashScheduler.Domain.Entities
+@inject ISessionService SessionService
+@inject IAnalyticsService AnalyticsService
+@inject NavigationManager Navigation
+
+<PageTitle>Session Analytics</PageTitle>
+
+@if (_session == null || _statistics == null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" />
+        <MudStack>
+            <MudText Typo="Typo.h4">Session Analytics</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @_session.ScheduledDateTime.ToString("dd MMM yyyy HH:mm")
+            </MudText>
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Class="mb-4">
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h4" Color="Color.Primary">@_statistics.TotalMatches</MudText>
+                <MudText Typo="Typo.body2">Total Matches</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h4" Color="Color.Success">@_statistics.CompletedMatches</MudText>
+                <MudText Typo="Typo.body2">Completed</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h4" Color="Color.Info">@_statistics.AutomatedMatches</MudText>
+                <MudText Typo="Typo.body2">Automated</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h4" Color="Color.Warning">@_statistics.ManualMatches</MudText>
+                <MudText Typo="Typo.body2">Manual</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudText Typo="Typo.h6" GutterBottom="true">Override Rate</MudText>
+        <MudProgressLinear Color="Color.Warning"
+                           Value="@(_statistics.OverrideRate * 100)"
+                           Class="mb-2" />
+        <MudText Typo="Typo.body2">@((_statistics.OverrideRate * 100).ToString("F1"))% of matches were manually adjusted</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 mb-4" Elevation="1">
+        <MudText Typo="Typo.h6" GutterBottom="true">Total Game Time</MudText>
+        <MudText Typo="Typo.h5" Color="Color.Primary">@FormatDuration(_statistics.TotalGameTime)</MudText>
+    </MudPaper>
+
+    <MudText Typo="Typo.h5" GutterBottom="true">Player Statistics</MudText>
+    <MudTable Items="@GetPlayerStatistics()" Hover="true" Striped="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Player</MudTh>
+            <MudTh>Games Played</MudTh>
+            <MudTh>Play Time</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Player">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudText>@context.Name</MudText>
+                    <SkillLevelBadge SkillLevel="@context.SkillLevel" />
+                </MudStack>
+            </MudTd>
+            <MudTd DataLabel="Games">@GetGamesPlayed(context.Id)</MudTd>
+            <MudTd DataLabel="Time">@FormatDuration(GetPlayTime(context.Id))</MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <MudButton Variant="Variant.Outlined" OnClick="GoBack" Class="mt-4">Back</MudButton>
+}
+
+@code {
+    [Parameter] public Guid ClubId { get; set; }
+    [Parameter] public Guid SessionId { get; set; }
+
+    private Session? _session;
+    private SessionStatistics? _statistics;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _session = await SessionService.GetByIdAsync(SessionId);
+        _statistics = await AnalyticsService.GetSessionStatisticsAsync(SessionId);
+    }
+
+    private IEnumerable<Player> GetPlayerStatistics()
+    {
+        if (_session == null) return Enumerable.Empty<Player>();
+        return _session.SessionPlayers
+            .Where(sp => sp.Player != null)
+            .Select(sp => sp.Player!)
+            .OrderByDescending(p => GetGamesPlayed(p.Id));
+    }
+
+    private int GetGamesPlayed(Guid playerId)
+    {
+        if (_statistics?.GamesPlayedPerPlayer == null) return 0;
+        return _statistics.GamesPlayedPerPlayer.TryGetValue(playerId, out var count) ? count : 0;
+    }
+
+    private TimeSpan GetPlayTime(Guid playerId)
+    {
+        if (_statistics?.PlayTimePerPlayer == null) return TimeSpan.Zero;
+        return _statistics.PlayTimePerPlayer.TryGetValue(playerId, out var time) ? time : TimeSpan.Zero;
+    }
+
+    private string FormatDuration(TimeSpan duration)
+    {
+        if (duration.TotalHours >= 1)
+            return $"{(int)duration.TotalHours}h {duration.Minutes}m";
+        if (duration.TotalMinutes >= 1)
+            return $"{(int)duration.TotalMinutes}m";
+        return "< 1m";
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo($"/clubs/{ClubId}/sessions/{SessionId}/complete");
+    }
+}

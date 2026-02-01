@@ -1,0 +1,158 @@
+@page "/clubs/{ClubId:guid}/sessions/{SessionId:guid}/draft"
+@using SmashScheduler.Application.Services.SessionManagement
+@using SmashScheduler.Application.Services.PlayerManagement
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Domain.Enums
+@inject ISessionService SessionService
+@inject ISessionStateManager SessionStateManager
+@inject IPlayerService PlayerService
+@inject NavigationManager Navigation
+
+<PageTitle>Session Draft</PageTitle>
+
+@if (_session == null || _allPlayers == null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack>
+            <MudText Typo="Typo.h4">Session Draft</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @_session.ScheduledDateTime.ToString("dd MMM yyyy HH:mm")
+            </MudText>
+        </MudStack>
+        <SessionStateBadge State="@_session.State" Size="Size.Medium" />
+    </MudStack>
+
+    <MudPaper Class="pa-3 mb-4" Elevation="1">
+        <MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center">
+            <MudNumericField T="int"
+                             Label="Courts"
+                             @bind-Value="_session.CourtCount"
+                             Min="1"
+                             Max="10"
+                             Variant="Variant.Outlined"
+                             Style="max-width: 120px;" />
+            <MudText Typo="Typo.body1">
+                <b>@GetSessionPlayerCount()</b> players in session
+            </MudText>
+        </MudStack>
+    </MudPaper>
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h6" GutterBottom="true">Available Players (@GetAvailablePlayers().Count())</MudText>
+                <MudStack Spacing="1">
+                    @foreach (var player in GetAvailablePlayers())
+                    {
+                        <PlayerCard Player="@player"
+                                    ShowActions="true"
+                                    OnAdd="@(() => AddPlayerToSession(player))" />
+                    }
+                    @if (!GetAvailablePlayers().Any())
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">All players added to session</MudText>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h6" GutterBottom="true">Session Players (@GetSessionPlayerCount())</MudText>
+                <MudStack Spacing="1">
+                    @foreach (var sessionPlayer in _session.SessionPlayers)
+                    {
+                        @if (sessionPlayer.Player != null)
+                        {
+                            <PlayerCard Player="@sessionPlayer.Player"
+                                        ShowActions="true"
+                                        OnRemove="@(() => RemovePlayerFromSession(sessionPlayer.Player))" />
+                        }
+                    }
+                    @if (!_session.SessionPlayers.Any())
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No players added yet</MudText>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
+        <MudButton Variant="Variant.Outlined" OnClick="GoBack">Back</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!CanStartSession())"
+                   OnClick="StartSession">
+            Start Session (@GetSessionPlayerCount() players)
+        </MudButton>
+    </MudStack>
+
+    @if (!CanStartSession())
+    {
+        <MudAlert Severity="Severity.Info" Class="mt-2">
+            You need at least 4 players to start a session.
+        </MudAlert>
+    }
+}
+
+@code {
+    [Parameter] public Guid ClubId { get; set; }
+    [Parameter] public Guid SessionId { get; set; }
+
+    private Session? _session;
+    private List<Player>? _allPlayers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _session = await SessionService.GetByIdAsync(SessionId);
+        _allPlayers = await PlayerService.GetByClubIdAsync(ClubId);
+    }
+
+    private IEnumerable<Player> GetAvailablePlayers()
+    {
+        if (_allPlayers == null || _session == null) return Enumerable.Empty<Player>();
+        var sessionPlayerIds = _session.SessionPlayers.Select(sp => sp.PlayerId).ToHashSet();
+        return _allPlayers.Where(p => !sessionPlayerIds.Contains(p.Id));
+    }
+
+    private int GetSessionPlayerCount() => _session?.SessionPlayers.Count ?? 0;
+
+    private bool CanStartSession() => GetSessionPlayerCount() >= 4;
+
+    private async Task AddPlayerToSession(Player player)
+    {
+        await SessionService.AddPlayerToSessionAsync(SessionId, player.Id);
+        await LoadData();
+    }
+
+    private async Task RemovePlayerFromSession(Player player)
+    {
+        await SessionService.RemovePlayerFromSessionAsync(SessionId, player.Id);
+        await LoadData();
+    }
+
+    private async Task StartSession()
+    {
+        if (_session != null)
+        {
+            await SessionService.UpdateSessionAsync(_session);
+        }
+        await SessionStateManager.ActivateSessionAsync(SessionId);
+        Navigation.NavigateTo($"/clubs/{ClubId}/sessions/{SessionId}/active");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo($"/clubs/{ClubId}/sessions");
+    }
+}

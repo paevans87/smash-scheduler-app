@@ -7,7 +7,8 @@ namespace SmashScheduler.Application.Services.SessionManagement;
 public class SessionService(
     ISessionRepository sessionRepository,
     IClubRepository clubRepository,
-    IMatchRepository matchRepository) : ISessionService
+    IMatchRepository matchRepository,
+    IPlayerRepository playerRepository) : ISessionService
 {
     public async Task<Session?> GetByIdAsync(Guid id)
     {
@@ -15,6 +16,10 @@ public class SessionService(
         if (session != null)
         {
             session.Matches = await matchRepository.GetBySessionIdAsync(session.Id);
+            foreach (var sp in session.SessionPlayers)
+            {
+                sp.Player = await playerRepository.GetByIdAsync(sp.PlayerId);
+            }
         }
         return session;
     }
@@ -52,11 +57,50 @@ public class SessionService(
         await sessionRepository.DeleteAsync(id);
     }
 
+    public async Task AddPlayerToSessionAsync(Guid sessionId, Guid playerId)
+    {
+        var session = await sessionRepository.GetByIdAsync(sessionId);
+        if (session == null) throw new InvalidOperationException("Session not found");
+
+        if (session.SessionPlayers.Any(sp => sp.PlayerId == playerId))
+            return;
+
+        var player = await playerRepository.GetByIdAsync(playerId);
+        session.SessionPlayers.Add(new SessionPlayer
+        {
+            SessionId = sessionId,
+            PlayerId = playerId,
+            IsActive = true,
+            JoinedAt = DateTime.UtcNow,
+            Player = player
+        });
+
+        await sessionRepository.UpdateAsync(session);
+    }
+
+    public async Task RemovePlayerFromSessionAsync(Guid sessionId, Guid playerId)
+    {
+        var session = await sessionRepository.GetByIdAsync(sessionId);
+        if (session == null) throw new InvalidOperationException("Session not found");
+
+        var sessionPlayer = session.SessionPlayers.FirstOrDefault(sp => sp.PlayerId == playerId);
+        if (sessionPlayer != null)
+        {
+            session.SessionPlayers.Remove(sessionPlayer);
+            await sessionRepository.UpdateAsync(session);
+        }
+    }
+
     public async Task MarkPlayerInactiveAsync(Guid sessionId, Guid playerId, bool isActive)
     {
         var session = await sessionRepository.GetByIdAsync(sessionId);
         if (session == null) throw new InvalidOperationException("Session not found");
 
-        await sessionRepository.UpdateAsync(session);
+        var sessionPlayer = session.SessionPlayers.FirstOrDefault(sp => sp.PlayerId == playerId);
+        if (sessionPlayer != null)
+        {
+            sessionPlayer.IsActive = isActive;
+            await sessionRepository.UpdateAsync(session);
+        }
     }
 }

@@ -1,0 +1,39 @@
+@using MudBlazor
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Web.Components
+
+<MudCard Class="pa-2" Elevation="1">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudAvatar Size="Size.Small" Color="Color.Primary">@Player.Name[0]</MudAvatar>
+            <MudText Typo="Typo.body1">@Player.Name</MudText>
+            <SkillLevelBadge SkillLevel="@Player.SkillLevel" />
+        </MudStack>
+        @if (ShowActions)
+        {
+            <MudStack Row="true" Spacing="1">
+                @if (OnAdd.HasDelegate)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                   Size="Size.Small"
+                                   Color="Color.Success"
+                                   OnClick="@(() => OnAdd.InvokeAsync(Player))" />
+                }
+                @if (OnRemove.HasDelegate)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="@(() => OnRemove.InvokeAsync(Player))" />
+                }
+            </MudStack>
+        }
+    </MudStack>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired] public Player Player { get; set; } = null!;
+    [Parameter] public bool ShowActions { get; set; }
+    [Parameter] public EventCallback<Player> OnAdd { get; set; }
+    [Parameter] public EventCallback<Player> OnRemove { get; set; }
+}

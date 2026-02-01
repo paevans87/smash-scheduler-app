@@ -1,0 +1,44 @@
+@using MudBlazor
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Domain.Enums
+@using SmashScheduler.Web.Components
+
+<MudGrid>
+    @for (var courtNum = 1; courtNum <= CourtCount; courtNum++)
+    {
+        var match = GetMatchForCourt(courtNum);
+        <MudItem xs="12" sm="6" md="4">
+            @if (match != null)
+            {
+                <MatchCard Match="@match"
+                           PlayerLookup="@PlayerLookup"
+                           IsReadOnly="@IsReadOnly"
+                           OnComplete="@OnMatchComplete" />
+            }
+            else
+            {
+                <MudCard Elevation="1" Class="empty-court">
+                    <MudCardContent>
+                        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 150px;">
+                            <MudText Typo="Typo.h6" Color="Color.Secondary">Court @courtNum</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Available</MudText>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            }
+        </MudItem>
+    }
+</MudGrid>
+
+@code {
+    [Parameter] public List<Match> Matches { get; set; } = new();
+    [Parameter] public int CourtCount { get; set; }
+    [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public EventCallback<Guid> OnMatchComplete { get; set; }
+
+    private Match? GetMatchForCourt(int courtNumber)
+    {
+        return Matches.FirstOrDefault(m => m.CourtNumber == courtNumber && m.State == MatchState.InProgress);
+    }
+}

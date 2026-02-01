@@ -1,0 +1,87 @@
+@using MudBlazor
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Domain.Enums
+@using SmashScheduler.Web.Components
+
+<MudCard Class="match-card" Elevation="2">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.h6">Court @Match.CourtNumber</MudText>
+                @if (Match.State == MatchState.Completed)
+                {
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Complete</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Warning" Size="Size.Small">In Progress</MudChip>
+                }
+            </MudStack>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudStack Spacing="2">
+            <MudPaper Class="pa-2" Elevation="0" Style="background-color: var(--mud-palette-background-grey);">
+                <MudText Typo="Typo.caption" Color="Color.Primary">Team 1</MudText>
+                @foreach (var player in GetTeam1Players())
+                {
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudText Typo="Typo.body2">@player.Name</MudText>
+                        <SkillLevelBadge SkillLevel="@player.SkillLevel" Size="Size.Small" />
+                    </MudStack>
+                }
+            </MudPaper>
+            <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">vs</MudText>
+            <MudPaper Class="pa-2" Elevation="0" Style="background-color: var(--mud-palette-background-grey);">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Team 2</MudText>
+                @foreach (var player in GetTeam2Players())
+                {
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudText Typo="Typo.body2">@player.Name</MudText>
+                        <SkillLevelBadge SkillLevel="@player.SkillLevel" Size="Size.Small" />
+                    </MudStack>
+                }
+            </MudPaper>
+            @if (Match.Score != null)
+            {
+                <MudText Typo="Typo.h6" Align="Align.Center">
+                    @Match.Score.Team1Score - @Match.Score.Team2Score
+                </MudText>
+            }
+        </MudStack>
+    </MudCardContent>
+    @if (!IsReadOnly && Match.State == MatchState.InProgress)
+    {
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       OnClick="@(() => OnComplete.InvokeAsync(Match.Id))">
+                Complete Match
+            </MudButton>
+        </MudCardActions>
+    }
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired] public Match Match { get; set; } = null!;
+    [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public EventCallback<Guid> OnComplete { get; set; }
+
+    private IEnumerable<Player> GetTeam1Players()
+    {
+        var playerIds = Match.PlayerIds.Take(2);
+        return playerIds
+            .Where(id => PlayerLookup.ContainsKey(id))
+            .Select(id => PlayerLookup[id]);
+    }
+
+    private IEnumerable<Player> GetTeam2Players()
+    {
+        var playerIds = Match.PlayerIds.Skip(2).Take(2);
+        return playerIds
+            .Where(id => PlayerLookup.ContainsKey(id))
+            .Select(id => PlayerLookup[id]);
+    }
+}

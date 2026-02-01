@@ -1,0 +1,106 @@
+@page "/clubs/{ClubId:guid}/sessions/{SessionId:guid}/complete"
+@using SmashScheduler.Application.Services.SessionManagement
+@using SmashScheduler.Application.Services.MatchManagement
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Domain.Enums
+@inject ISessionService SessionService
+@inject IMatchService MatchService
+@inject NavigationManager Navigation
+
+<PageTitle>Session Complete</PageTitle>
+
+@if (_session == null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack>
+            <MudText Typo="Typo.h4">Session Summary</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @_session.ScheduledDateTime.ToString("dd MMM yyyy HH:mm")
+            </MudText>
+        </MudStack>
+        <SessionStateBadge State="@_session.State" Size="Size.Medium" />
+    </MudStack>
+
+    <MudGrid Class="mb-4">
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h4" Color="Color.Primary">@_matches.Count</MudText>
+                <MudText Typo="Typo.body2">Total Matches</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h4" Color="Color.Success">@_matches.Count(m => m.State == MatchState.Completed)</MudText>
+                <MudText Typo="Typo.body2">Completed</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h4" Color="Color.Info">@_session.SessionPlayers.Count</MudText>
+                <MudText Typo="Typo.body2">Players</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="3">
+            <MudPaper Class="pa-3" Elevation="1">
+                <MudText Typo="Typo.h4" Color="Color.Secondary">@_session.CourtCount</MudText>
+                <MudText Typo="Typo.body2">Courts</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h5" GutterBottom="true">Match History</MudText>
+    <CourtDisplay Matches="@_matches"
+                  CourtCount="@GetMaxCourtNumber()"
+                  PlayerLookup="@_playerLookup"
+                  IsReadOnly="true" />
+
+    <MudStack Row="true" Spacing="2" Class="mt-4">
+        <MudButton Variant="Variant.Outlined" OnClick="GoBack">Back to Sessions</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="ViewAnalytics">
+            View Analytics
+        </MudButton>
+    </MudStack>
+}
+
+@code {
+    [Parameter] public Guid ClubId { get; set; }
+    [Parameter] public Guid SessionId { get; set; }
+
+    private Session? _session;
+    private List<Match> _matches = new();
+    private Dictionary<Guid, Player> _playerLookup = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _session = await SessionService.GetByIdAsync(SessionId);
+        if (_session != null)
+        {
+            _matches = await MatchService.GetBySessionIdAsync(SessionId);
+            _playerLookup = _session.SessionPlayers
+                .Where(sp => sp.Player != null)
+                .ToDictionary(sp => sp.PlayerId, sp => sp.Player!);
+        }
+    }
+
+    private int GetMaxCourtNumber()
+    {
+        if (!_matches.Any()) return _session?.CourtCount ?? 0;
+        return Math.Max(_matches.Max(m => m.CourtNumber), _session?.CourtCount ?? 0);
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo($"/clubs/{ClubId}/sessions");
+    }
+
+    private void ViewAnalytics()
+    {
+        Navigation.NavigateTo($"/clubs/{ClubId}/sessions/{SessionId}/analytics");
+    }
+}

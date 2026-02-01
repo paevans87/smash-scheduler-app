@@ -1,0 +1,17 @@
+@using MudBlazor
+@using SmashScheduler.Domain.Enums
+
+<MudChip T="string" Color="@GetColour()" Size="@Size">@State</MudChip>
+
+@code {
+    [Parameter] public SessionState State { get; set; }
+    [Parameter] public Size Size { get; set; } = Size.Small;
+
+    private Color GetColour() => State switch
+    {
+        SessionState.Draft => Color.Default,
+        SessionState.Active => Color.Success,
+        SessionState.Complete => Color.Info,
+        _ => Color.Default
+    };
+}

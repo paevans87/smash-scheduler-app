@@ -1,0 +1,94 @@
+@page "/clubs/{ClubId:guid}/sessions"
+@using SmashScheduler.Application.Services.SessionManagement
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Domain.Enums
+@inject ISessionService SessionService
+@inject NavigationManager Navigation
+
+<PageTitle>Sessions</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Sessions</MudText>
+
+<MudChipSet T="SessionState?" @bind-SelectedValue="_selectedState" Class="mb-4">
+    <MudChip T="SessionState?" Value="@((SessionState?)null)" Color="Color.Default">All</MudChip>
+    <MudChip T="SessionState?" Value="SessionState.Draft" Color="Color.Default">Draft</MudChip>
+    <MudChip T="SessionState?" Value="SessionState.Active" Color="Color.Success">Active</MudChip>
+    <MudChip T="SessionState?" Value="SessionState.Complete" Color="Color.Info">Complete</MudChip>
+</MudChipSet>
+
+@if (_sessions == null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        @foreach (var session in GetFilteredSessions())
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MudCard Style="cursor: pointer" @onclick="() => NavigateToSession(session)">
+                    <MudCardContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.h6">@session.ScheduledDateTime.ToString("dd MMM yyyy")</MudText>
+                            <SessionStateBadge State="@session.State" />
+                        </MudStack>
+                        <MudText Typo="Typo.body2">@session.ScheduledDateTime.ToString("HH:mm")</MudText>
+                        <MudDivider Class="my-2" />
+                        <MudStack Row="true" Spacing="3">
+                            <MudText Typo="Typo.body2"><b>Courts:</b> @session.CourtCount</MudText>
+                            <MudText Typo="Typo.body2"><b>Players:</b> @session.SessionPlayers.Count</MudText>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+
+    @if (!GetFilteredSessions().Any())
+    {
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-4">No sessions found.</MudText>
+    }
+
+    <MudFab Color="Color.Primary"
+            StartIcon="@Icons.Material.Filled.Add"
+            Label="New Session"
+            OnClick="CreateSession"
+            Style="position: fixed; bottom: 16px; right: 16px;" />
+}
+
+@code {
+    [Parameter] public Guid ClubId { get; set; }
+    private List<Session>? _sessions;
+    private SessionState? _selectedState;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _sessions = await SessionService.GetByClubIdAsync(ClubId);
+    }
+
+    private IEnumerable<Session> GetFilteredSessions()
+    {
+        if (_sessions == null) return Enumerable.Empty<Session>();
+        if (_selectedState == null) return _sessions.OrderByDescending(s => s.ScheduledDateTime);
+        return _sessions.Where(s => s.State == _selectedState).OrderByDescending(s => s.ScheduledDateTime);
+    }
+
+    private void NavigateToSession(Session session)
+    {
+        var page = session.State switch
+        {
+            SessionState.Draft => "draft",
+            SessionState.Active => "active",
+            SessionState.Complete => "complete",
+            _ => "draft"
+        };
+        Navigation.NavigateTo($"/clubs/{ClubId}/sessions/{session.Id}/{page}");
+    }
+
+    private async Task CreateSession()
+    {
+        var session = await SessionService.CreateSessionAsync(ClubId, DateTime.Now, null);
+        _sessions = await SessionService.GetByClubIdAsync(ClubId);
+        Navigation.NavigateTo($"/clubs/{ClubId}/sessions/{session.Id}/draft");
+    }
+}

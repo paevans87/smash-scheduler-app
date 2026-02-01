@@ -1,0 +1,59 @@
+@using MudBlazor
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Web.Components
+
+<MudStack Spacing="3">
+    <CourtDisplay Matches="@ActiveMatches"
+                  CourtCount="@Session.CourtCount"
+                  PlayerLookup="@PlayerLookup"
+                  IsReadOnly="false"
+                  OnMatchComplete="@OnMatchComplete" />
+
+    <BenchDisplay BenchedPlayers="@GetBenchedPlayers()" />
+</MudStack>
+
+@if (CanGenerateMatches)
+{
+    <MudFab Color="Color.Primary"
+            StartIcon="@(IsGenerating ? Icons.Material.Filled.Sync : Icons.Material.Filled.AutoAwesome)"
+            Label="@(IsGenerating ? "Generating..." : "Generate Matches")"
+            OnClick="HandleGenerateMatches"
+            Disabled="@IsGenerating"
+            Style="position: fixed; bottom: 16px; right: 16px;" />
+}
+
+@code {
+    [Parameter, EditorRequired] public Session Session { get; set; } = null!;
+    [Parameter] public List<Match> ActiveMatches { get; set; } = new();
+    [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
+    [Parameter] public EventCallback OnGenerateMatches { get; set; }
+    [Parameter] public EventCallback<Guid> OnMatchComplete { get; set; }
+    [Parameter] public bool CanGenerateMatches { get; set; }
+
+    private bool IsGenerating { get; set; }
+
+    private IEnumerable<Player> GetBenchedPlayers()
+    {
+        var playingPlayerIds = ActiveMatches
+            .Where(m => m.State == Domain.Enums.MatchState.InProgress)
+            .SelectMany(m => m.PlayerIds)
+            .ToHashSet();
+
+        return Session.SessionPlayers
+            .Where(sp => sp.IsActive)
+            .Select(sp => sp.PlayerId)
+            .Where(id => !playingPlayerIds.Contains(id) && PlayerLookup.ContainsKey(id))
+            .Select(id => PlayerLookup[id]);
+    }
+
+    private async Task HandleGenerateMatches()
+    {
+        IsGenerating = true;
+        StateHasChanged();
+
+        await OnGenerateMatches.InvokeAsync();
+
+        IsGenerating = false;
+        StateHasChanged();
+    }
+}

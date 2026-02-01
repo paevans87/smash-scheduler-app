@@ -1,0 +1,161 @@
+@page "/clubs/{ClubId:guid}/sessions/{SessionId:guid}/active"
+@using SmashScheduler.Application.Services.SessionManagement
+@using SmashScheduler.Application.Services.MatchManagement
+@using SmashScheduler.Application.Services.Matchmaking
+@using SmashScheduler.Application.Services.Matchmaking.Models
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Domain.Enums
+@inject ISessionService SessionService
+@inject ISessionStateManager SessionStateManager
+@inject IMatchService MatchService
+@inject IMatchmakingService MatchmakingService
+@inject NavigationManager Navigation
+
+<PageTitle>Active Session</PageTitle>
+
+@if (_session == null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack>
+            <MudText Typo="Typo.h4">Active Session</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @_session.ScheduledDateTime.ToString("dd MMM yyyy HH:mm") • @_session.CourtCount courts
+            </MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <SessionStateBadge State="@_session.State" Size="Size.Medium" />
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Error"
+                       OnClick="EndSession">
+                End Session
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    <MatchmakingPanel Session="@_session"
+                      ActiveMatches="@_activeMatches"
+                      PlayerLookup="@_playerLookup"
+                      CanGenerateMatches="@CanGenerateMatches()"
+                      OnGenerateMatches="GenerateMatches"
+                      OnMatchComplete="CompleteMatch" />
+}
+
+@code {
+    [Parameter] public Guid ClubId { get; set; }
+    [Parameter] public Guid SessionId { get; set; }
+
+    private Session? _session;
+    private List<Match> _activeMatches = new();
+    private Dictionary<Guid, Player> _playerLookup = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _session = await SessionService.GetByIdAsync(SessionId);
+        if (_session != null)
+        {
+            _activeMatches = await MatchService.GetBySessionIdAsync(SessionId);
+            _playerLookup = _session.SessionPlayers
+                .Where(sp => sp.Player != null)
+                .ToDictionary(sp => sp.PlayerId, sp => sp.Player!);
+        }
+    }
+
+    private bool CanGenerateMatches()
+    {
+        if (_session == null) return false;
+        var inProgressMatches = _activeMatches.Count(m => m.State == MatchState.InProgress);
+        var availableCourts = _session.CourtCount - inProgressMatches;
+        var benchedCount = GetBenchedPlayerCount();
+        return availableCourts > 0 && benchedCount >= 4;
+    }
+
+    private int GetBenchedPlayerCount()
+    {
+        if (_session == null) return 0;
+        var playingPlayerIds = _activeMatches
+            .Where(m => m.State == MatchState.InProgress)
+            .SelectMany(m => m.PlayerIds)
+            .ToHashSet();
+        return _session.SessionPlayers
+            .Count(sp => sp.IsActive && !playingPlayerIds.Contains(sp.PlayerId));
+    }
+
+    private async Task GenerateMatches()
+    {
+        var candidates = await MatchmakingService.GenerateMatchesAsync(SessionId);
+
+        if (!candidates.Any())
+        {
+            candidates = GenerateFallbackMatches();
+        }
+
+        foreach (var candidate in candidates)
+        {
+            await MatchService.CreateMatchAsync(SessionId, candidate.CourtNumber, candidate.PlayerIds, true);
+        }
+
+        await LoadData();
+    }
+
+    private List<MatchCandidate> GenerateFallbackMatches()
+    {
+        if (_session == null) return new List<MatchCandidate>();
+
+        var playingPlayerIds = _activeMatches
+            .Where(m => m.State == MatchState.InProgress)
+            .SelectMany(m => m.PlayerIds)
+            .ToHashSet();
+
+        var benchedPlayerIds = _session.SessionPlayers
+            .Where(sp => sp.IsActive && !playingPlayerIds.Contains(sp.PlayerId))
+            .Select(sp => sp.PlayerId)
+            .ToList();
+
+        var usedCourts = _activeMatches
+            .Where(m => m.State == MatchState.InProgress)
+            .Select(m => m.CourtNumber)
+            .ToHashSet();
+
+        var availableCourts = Enumerable.Range(1, _session.CourtCount)
+            .Where(c => !usedCourts.Contains(c))
+            .ToList();
+
+        var candidates = new List<MatchCandidate>();
+        var playerIndex = 0;
+
+        foreach (var courtNumber in availableCourts)
+        {
+            if (playerIndex + 4 > benchedPlayerIds.Count) break;
+
+            candidates.Add(new MatchCandidate
+            {
+                CourtNumber = courtNumber,
+                PlayerIds = benchedPlayerIds.Skip(playerIndex).Take(4).ToList()
+            });
+            playerIndex += 4;
+        }
+
+        return candidates;
+    }
+
+    private async Task CompleteMatch(Guid matchId)
+    {
+        await MatchService.CompleteMatchAsync(matchId, null, null);
+        await LoadData();
+    }
+
+    private async Task EndSession()
+    {
+        await SessionStateManager.CompleteSessionAsync(SessionId);
+        Navigation.NavigateTo($"/clubs/{ClubId}/sessions/{SessionId}/complete");
+    }
+}

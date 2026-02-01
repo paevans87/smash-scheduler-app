@@ -23,6 +23,7 @@ else
         </MudCardContent>
         <MudCardActions>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ViewPlayers">View Players</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="ViewSessions">View Sessions</MudButton>
             <MudButton Variant="Variant.Outlined" OnClick="GoBack">Back to Clubs</MudButton>
         </MudCardActions>
     </MudCard>
@@ -40,6 +41,11 @@ else
     private void ViewPlayers()
     {
         Navigation.NavigateTo($"/clubs/{ClubId}/players");
+    }
+
+    private void ViewSessions()
+    {
+        Navigation.NavigateTo($"/clubs/{ClubId}/sessions");
     }
 
     private void GoBack()

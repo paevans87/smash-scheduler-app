@@ -1,0 +1,16 @@
+@using MudBlazor
+
+<MudChip T="string" Color="@GetColour()" Size="@Size">@SkillLevel</MudChip>
+
+@code {
+    [Parameter] public int SkillLevel { get; set; }
+    [Parameter] public Size Size { get; set; } = Size.Small;
+
+    private Color GetColour() => SkillLevel switch
+    {
+        <= 3 => Color.Success,
+        <= 6 => Color.Info,
+        <= 9 => Color.Warning,
+        _ => Color.Error
+    };
+}

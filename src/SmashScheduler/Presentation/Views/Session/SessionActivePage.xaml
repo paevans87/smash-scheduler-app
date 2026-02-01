@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:SmashScheduler.Presentation.ViewModels.Session"
+             xmlns:controls="clr-namespace:SmashScheduler.Presentation.Controls"
+             x:Class="SmashScheduler.Presentation.Views.Session.SessionActivePage"
+             x:DataType="viewmodels:SessionActiveViewModel"
+             Title="Active Session">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <Frame Grid.Row="0"
+              BackgroundColor="#27AE60"
+              Padding="16"
+              CornerRadius="0"
+              HasShadow="False">
+
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <VerticalStackLayout Grid.Column="0" Spacing="4">
+                    <Label Text="🟢 Active"
+                          TextColor="White"
+                          FontSize="13"
+                          FontAttributes="Bold" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Grid.Column="1" Spacing="4">
+                    <Label Text="{Binding Session.CourtCount, StringFormat='{0} courts'}"
+                          TextColor="White"
+                          FontSize="13"
+                          HorizontalOptions="Center" />
+                </VerticalStackLayout>
+
+                <Button Grid.Column="2"
+                       Text="Complete"
+                       Command="{Binding CompleteSessionCommand}"
+                       BackgroundColor="White"
+                       TextColor="#27AE60"
+                       CornerRadius="8"
+                       Padding="8,4"
+                       FontSize="13"
+                       FontAttributes="Bold"
+                       HorizontalOptions="End" />
+            </Grid>
+        </Frame>
+
+        <RefreshView Grid.Row="1"
+                    IsRefreshing="{Binding IsLoading}"
+                    Command="{Binding RefreshCommand}">
+
+            <ScrollView>
+                <VerticalStackLayout Padding="16" Spacing="16">
+
+                    <Label Text="Courts"
+                          TextColor="#2C3E50"
+                          FontSize="20"
+                          FontAttributes="Bold" />
+
+                    <CollectionView ItemsSource="{Binding ActiveMatches}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <controls:MatchCard />
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.EmptyView>
+                            <StackLayout Padding="16">
+                                <Label Text="No active matches"
+                                      TextColor="#7F8C8D"
+                                      FontSize="15"
+                                      HorizontalOptions="Center" />
+                            </StackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+
+                    <BoxView Color="#E8ECEF"
+                            HeightRequest="1"
+                            Margin="0,8" />
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                              Text="{Binding BenchedPlayers.Count, StringFormat='Bench ({0})'}"
+                              TextColor="#2C3E50"
+                              FontSize="20"
+                              FontAttributes="Bold" />
+                    </Grid>
+
+                    <CollectionView ItemsSource="{Binding BenchedPlayers}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <controls:PlayerCard />
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.EmptyView>
+                            <StackLayout Padding="16">
+                                <Label Text="All players are on court"
+                                      TextColor="#7F8C8D"
+                                      FontSize="15"
+                                      HorizontalOptions="Center" />
+                            </StackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <Button Grid.Row="2"
+               Text="⚡ Generate Matches"
+               Command="{Binding GenerateMatchesCommand}"
+               IsEnabled="{Binding IsGeneratingMatches, Converter={StaticResource InvertedBoolConverter}}"
+               BackgroundColor="#2ECC71"
+               TextColor="White"
+               CornerRadius="28"
+               Padding="24,16"
+               FontSize="17"
+               FontAttributes="Bold"
+               Margin="16"
+               WidthRequest="200"
+               HeightRequest="56"
+               HorizontalOptions="End"
+               VerticalOptions="End" />
+    </Grid>
+</ContentPage>

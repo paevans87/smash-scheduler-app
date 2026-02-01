@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:SmashScheduler.Presentation.ViewModels.Club"
+             x:Class="SmashScheduler.Presentation.Views.Club.ClubEditPage"
+             x:DataType="viewmodels:ClubEditViewModel"
+             Title="{Binding IsNewClub, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Create Club|Edit Club'}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <Label Text="{Binding IsNewClub, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Create Your Club|Edit Club Details'}"
+                  TextColor="#2C3E50"
+                  FontSize="28"
+                  FontAttributes="Bold" />
+
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Club Name"
+                      TextColor="#2C3E50"
+                      FontSize="15"
+                      FontAttributes="Bold" />
+
+                <Entry Text="{Binding Name}"
+                      Placeholder="Enter club name"
+                      PlaceholderColor="#BDC3C7"
+                      TextColor="#2C3E50"
+                      FontSize="17"
+                      BackgroundColor="White" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Default Court Count"
+                      TextColor="#2C3E50"
+                      FontSize="15"
+                      FontAttributes="Bold" />
+
+                <Stepper Value="{Binding DefaultCourtCount}"
+                        Minimum="1"
+                        Maximum="20"
+                        Increment="1" />
+
+                <Label Text="{Binding DefaultCourtCount, StringFormat='{0} courts'}"
+                      TextColor="#7F8C8D"
+                      FontSize="15" />
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Game Type"
+                      TextColor="#2C3E50"
+                      FontSize="15"
+                      FontAttributes="Bold" />
+
+                <Picker ItemsSource="{Binding GameTypes}"
+                       SelectedItem="{Binding GameType}"
+                       TextColor="#2C3E50"
+                       FontSize="17" />
+            </VerticalStackLayout>
+
+            <Label Text="{Binding ErrorMessage}"
+                  TextColor="#E74C3C"
+                  FontSize="15"
+                  IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}"
+                  Margin="0,8" />
+
+            <Button Text="Save Club"
+                   Command="{Binding SaveCommand}"
+                   IsEnabled="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"
+                   BackgroundColor="#2ECC71"
+                   TextColor="White"
+                   CornerRadius="12"
+                   Padding="16"
+                   FontSize="17"
+                   FontAttributes="Bold"
+                   Margin="0,16,0,0" />
+
+            <Button Text="Cancel"
+                   Command="{Binding CancelCommand}"
+                   BackgroundColor="Transparent"
+                   BorderColor="#E74C3C"
+                   BorderWidth="2"
+                   TextColor="#E74C3C"
+                   CornerRadius="12"
+                   Padding="16"
+                   FontSize="17" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

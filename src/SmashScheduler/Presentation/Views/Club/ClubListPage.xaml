@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:SmashScheduler.Presentation.ViewModels.Club"
+             x:Class="SmashScheduler.Presentation.Views.Club.ClubListPage"
+             x:DataType="viewmodels:ClubListViewModel"
+             Title="Clubs">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <RefreshView Grid.Row="0"
+                     IsRefreshing="{Binding IsLoading}"
+                     Command="{Binding LoadClubsCommand}">
+
+            <CollectionView ItemsSource="{Binding Clubs}"
+                           Margin="16,8">
+
+                <CollectionView.EmptyView>
+                    <StackLayout Padding="32"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center"
+                                Spacing="16">
+
+                        <Label Text="🏸"
+                              FontSize="64"
+                              HorizontalOptions="Center" />
+
+                        <Label Text="Create Your First Club"
+                              FontSize="24"
+                              FontAttributes="Bold"
+                              TextColor="#2C3E50"
+                              HorizontalOptions="Center" />
+
+                        <Label Text="Build your club roster to start organising sessions"
+                              FontSize="15"
+                              TextColor="#7F8C8D"
+                              HorizontalOptions="Center"
+                              HorizontalTextAlignment="Center" />
+
+                        <Button Text="Get Started"
+                               Command="{Binding NavigateToCreateClubCommand}"
+                               BackgroundColor="#2ECC71"
+                               TextColor="White"
+                               CornerRadius="12"
+                               Padding="24,12"
+                               HorizontalOptions="Center"
+                               Margin="0,16,0,0" />
+                    </StackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame BackgroundColor="White"
+                              BorderColor="#E8ECEF"
+                              CornerRadius="16"
+                              Padding="16"
+                              Margin="0,8"
+                              HasShadow="True">
+
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ClubListViewModel}}, Path=NavigateToClubDetailCommand}"
+                                                     CommandParameter="{Binding Id}" />
+                            </Frame.GestureRecognizers>
+
+                            <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
+                                <Label Grid.Row="0"
+                                      Text="{Binding Name}"
+                                      TextColor="#2C3E50"
+                                      FontSize="20"
+                                      FontAttributes="Bold" />
+
+                                <Label Grid.Row="1"
+                                      TextColor="#7F8C8D"
+                                      FontSize="15">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding DefaultCourtCount}" />
+                                            <Span Text=" courts • " />
+                                            <Span Text="{Binding GameType}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <Button Grid.Row="1"
+               Text="+ New Club"
+               Command="{Binding NavigateToCreateClubCommand}"
+               BackgroundColor="#2ECC71"
+               TextColor="White"
+               CornerRadius="12"
+               Padding="16"
+               Margin="16"
+               FontSize="17"
+               FontAttributes="Bold" />
+    </Grid>
+</ContentPage>

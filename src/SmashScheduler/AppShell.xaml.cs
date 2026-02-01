@@ -10,8 +10,17 @@ public partial class AppShell : Shell
 {
     public AppShell()
     {
-        InitializeComponent();
-        RegisterRoutes();
+        try 
+        {
+            InitializeComponent();
+            RegisterRoutes();
+        }
+        catch (Exception ex)
+        {
+            // This will print to your Rider 'Debug' console
+            System.Diagnostics.Debug.WriteLine($"XAML CRASH: {ex.Message}");
+            throw; 
+        }
     }
 
     private void RegisterRoutes()

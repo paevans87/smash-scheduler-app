@@ -20,6 +20,13 @@
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">26.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
+  <PropertyGroup Condition="$(TargetFramework.Contains('-android'))">
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <AndroidErrorOnLowSdkVersion>false</AndroidErrorOnLowSdkVersion>
+  </PropertyGroup>
+  
+
   <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
     <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.1" />
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="10.0.1" />
@@ -43,6 +50,10 @@
     <None Include="App.xaml.cs" />
     <None Include="AppShell.xaml.cs" />
     <None Include="MauiProgram.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <MauiIcon Include="Resources\AppIcon\appiconfg.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
   </ItemGroup>
 
 </Project>

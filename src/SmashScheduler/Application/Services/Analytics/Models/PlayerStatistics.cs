@@ -9,12 +9,3 @@ public class PlayerStatistics
     public List<PartnerStatistic> TopLossPartners { get; set; } = new();
     public List<PartnerStatistic> MostFrequentPartners { get; set; } = new();
 }
-
-public class PartnerStatistic
-{
-    public Guid PartnerId { get; set; }
-    public string PartnerName { get; set; } = string.Empty;
-    public int GamesPlayed { get; set; }
-    public int Wins { get; set; }
-    public int Losses { get; set; }
-}

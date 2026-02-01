@@ -24,4 +24,12 @@ public class SessionStateManager(
         session.State = SessionState.Complete;
         await sessionRepository.UpdateAsync(session);
     }
+
+    public async Task<SessionState> GetSessionStateAsync(Guid sessionId)
+    {
+        var session = await sessionRepository.GetByIdAsync(sessionId);
+        if (session == null) throw new InvalidOperationException("Session not found");
+
+        return session.State;
+    }
 }

@@ -21,7 +21,7 @@ else
                 <MudCard>
                     <MudCardContent>
                         <MudText Typo="Typo.h5">@player.Name</MudText>
-                        <MudChip Color="Color.Primary" Size="Size.Small">Skill: @player.SkillLevel</MudChip>
+                        <MudChip T="string" Color="Color.Primary" Size="Size.Small">Skill: @player.SkillLevel</MudChip>
                         <MudText Typo="Typo.body2">@player.Gender</MudText>
                         <MudText Typo="Typo.body2">@player.PlayStylePreference</MudText>
                     </MudCardContent>
@@ -44,12 +44,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _players = await PlayerService.GetPlayersByClubIdAsync(ClubId);
+        _players = await PlayerService.GetByClubIdAsync(ClubId);
     }
 
     private async Task CreateTestPlayer()
     {
         await PlayerService.CreatePlayerAsync(ClubId, $"Player {_players.Count + 1}", 5, Gender.Male, PlayStylePreference.Mixed);
-        _players = await PlayerService.GetPlayersByClubIdAsync(ClubId);
+        _players = await PlayerService.GetByClubIdAsync(ClubId);
     }
 }

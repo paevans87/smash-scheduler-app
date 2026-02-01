@@ -2,6 +2,7 @@ namespace SmashScheduler.Application.Services.Analytics.Models;
 
 public class SessionStatistics
 {
+    public Guid SessionId { get; set; }
     public int TotalMatches { get; set; }
     public int CompletedMatches { get; set; }
     public int AutomatedMatches { get; set; }

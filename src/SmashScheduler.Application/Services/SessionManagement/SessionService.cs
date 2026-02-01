@@ -19,7 +19,7 @@ public class SessionService(
         return session;
     }
 
-    public async Task<List<Session>> GetSessionsByClubIdAsync(Guid clubId)
+    public async Task<List<Session>> GetByClubIdAsync(Guid clubId)
     {
         return await sessionRepository.GetByClubIdAsync(clubId);
     }
@@ -50,5 +50,13 @@ public class SessionService(
     public async Task DeleteSessionAsync(Guid id)
     {
         await sessionRepository.DeleteAsync(id);
+    }
+
+    public async Task MarkPlayerInactiveAsync(Guid sessionId, Guid playerId, bool isActive)
+    {
+        var session = await sessionRepository.GetByIdAsync(sessionId);
+        if (session == null) throw new InvalidOperationException("Session not found");
+
+        await sessionRepository.UpdateAsync(session);
     }
 }

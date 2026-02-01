@@ -45,6 +45,14 @@ public class MatchService(IMatchRepository matchRepository) : IMatchService
         await matchRepository.UpdateAsync(match);
     }
 
+    public async Task UpdateMatchPlayersAsync(Guid matchId, List<Guid> playerIds)
+    {
+        var match = await matchRepository.GetByIdAsync(matchId);
+        if (match == null) throw new InvalidOperationException("Match not found");
+
+        await matchRepository.UpdateAsync(match);
+    }
+
     public async Task DeleteMatchAsync(Guid id)
     {
         await matchRepository.DeleteAsync(id);

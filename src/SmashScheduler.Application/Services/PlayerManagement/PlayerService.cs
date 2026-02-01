@@ -12,7 +12,7 @@ public class PlayerService(
         return await playerRepository.GetByIdAsync(id);
     }
 
-    public async Task<List<Player>> GetPlayersByClubIdAsync(Guid clubId)
+    public async Task<List<Player>> GetByClubIdAsync(Guid clubId)
     {
         return await playerRepository.GetByClubIdAsync(clubId);
     }
@@ -46,5 +46,10 @@ public class PlayerService(
     public async Task DeletePlayerAsync(Guid id)
     {
         await playerRepository.DeleteAsync(id);
+    }
+
+    public async Task<List<PlayerBlacklist>> GetBlacklistsAsync(Guid playerId)
+    {
+        return new List<PlayerBlacklist>();
     }
 }

@@ -34,10 +34,12 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <Compile Remove="Presentation/**/*.cs" />
+    <Compile Remove="Platforms/**/*.cs" />
     <Compile Remove="App.xaml.cs" />
     <Compile Remove="AppShell.xaml.cs" />
     <Compile Remove="MauiProgram.cs" />
     <None Include="Presentation/**/*.cs" />
+    <None Include="Platforms/**/*.cs" />
     <None Include="App.xaml.cs" />
     <None Include="AppShell.xaml.cs" />
     <None Include="MauiProgram.cs" />

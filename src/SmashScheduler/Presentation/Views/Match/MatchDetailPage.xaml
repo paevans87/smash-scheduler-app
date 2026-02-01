@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:SmashScheduler.Presentation.ViewModels.Match"
+             x:Class="SmashScheduler.Presentation.Views.Match.MatchDetailPage"
+             x:DataType="viewmodels:MatchDetailViewModel"
+             Title="Match Details">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="24">
+
+            <Frame BackgroundColor="White"
+                  BorderColor="#E8ECEF"
+                  CornerRadius="16"
+                  Padding="24"
+                  HasShadow="True">
+
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="{Binding Match.CourtNumber, StringFormat='Court {0}'}"
+                          TextColor="#2C3E50"
+                          FontSize="28"
+                          FontAttributes="Bold" />
+
+                    <Label Text="{Binding Match.State}"
+                          TextColor="#7F8C8D"
+                          FontSize="17" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Frame BackgroundColor="White"
+                  BorderColor="#E8ECEF"
+                  CornerRadius="16"
+                  Padding="16"
+                  HasShadow="True">
+
+                <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
+                    <Label Grid.Row="0"
+                          Text="Players"
+                          TextColor="#2C3E50"
+                          FontSize="18"
+                          FontAttributes="Bold" />
+
+                    <CollectionView Grid.Row="1"
+                                   ItemsSource="{Binding Players}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Label Text="{Binding Name}"
+                                      TextColor="#2C3E50"
+                                      FontSize="17"
+                                      Margin="0,8" />
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </Grid>
+            </Frame>
+
+            <Frame BackgroundColor="White"
+                  BorderColor="#E8ECEF"
+                  CornerRadius="16"
+                  Padding="16"
+                  HasShadow="True">
+
+                <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="16">
+                    <Label Grid.Row="0"
+                          Text="Record Score (Optional)"
+                          TextColor="#2C3E50"
+                          FontSize="18"
+                          FontAttributes="Bold" />
+
+                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,*" ColumnSpacing="16">
+                        <VerticalStackLayout Grid.Column="0" Spacing="8">
+                            <Label Text="Team 1"
+                                  TextColor="#7F8C8D"
+                                  FontSize="15" />
+                            <Entry Text="{Binding Team1Score}"
+                                  Keyboard="Numeric"
+                                  Placeholder="0"
+                                  TextColor="#2C3E50"
+                                  FontSize="24"
+                                  FontAttributes="Bold"
+                                  HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+
+                        <Label Grid.Column="1"
+                              Text="-"
+                              TextColor="#7F8C8D"
+                              FontSize="24"
+                              VerticalOptions="Center" />
+
+                        <VerticalStackLayout Grid.Column="2" Spacing="8">
+                            <Label Text="Team 2"
+                                  TextColor="#7F8C8D"
+                                  FontSize="15" />
+                            <Entry Text="{Binding Team2Score}"
+                                  Keyboard="Numeric"
+                                  Placeholder="0"
+                                  TextColor="#2C3E50"
+                                  FontSize="24"
+                                  FontAttributes="Bold"
+                                  HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Grid>
+            </Frame>
+
+            <Button Text="Complete Match"
+                   Command="{Binding CompleteMatchCommand}"
+                   BackgroundColor="#27AE60"
+                   TextColor="White"
+                   CornerRadius="12"
+                   Padding="16"
+                   FontSize="17"
+                   FontAttributes="Bold" />
+
+            <Button Text="Cancel"
+                   Command="{Binding CancelCommand}"
+                   BackgroundColor="Transparent"
+                   BorderColor="#7F8C8D"
+                   BorderWidth="2"
+                   TextColor="#7F8C8D"
+                   CornerRadius="12"
+                   Padding="16"
+                   FontSize="17" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

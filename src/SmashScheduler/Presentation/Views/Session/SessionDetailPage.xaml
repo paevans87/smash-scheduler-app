@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:SmashScheduler.Presentation.ViewModels.Session"
+             xmlns:converters="clr-namespace:SmashScheduler.Presentation.Converters"
+             x:Class="SmashScheduler.Presentation.Views.Session.SessionDetailPage"
+             x:DataType="viewmodels:SessionDetailViewModel"
+             Title="Session Details">
+
+    <ContentPage.Resources>
+        <converters:SessionStateToColourConverter x:Key="SessionStateToColourConverter" />
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="24">
+
+            <Frame BackgroundColor="White"
+                  BorderColor="#E8ECEF"
+                  CornerRadius="16"
+                  Padding="24"
+                  HasShadow="True">
+
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="12">
+                    <Label Grid.Row="0"
+                          Text="{Binding Session.ScheduledDateTime, StringFormat='{0:dddd, dd MMMM yyyy}'}"
+                          TextColor="#2C3E50"
+                          FontSize="24"
+                          FontAttributes="Bold" />
+
+                    <Label Grid.Row="1"
+                          Text="{Binding Session.ScheduledDateTime, StringFormat='{0:HH:mm}'}"
+                          TextColor="#7F8C8D"
+                          FontSize="17" />
+
+                    <Frame Grid.Row="2"
+                          BackgroundColor="{Binding Session.State, Converter={StaticResource SessionStateToColourConverter}}"
+                          Padding="12,6"
+                          CornerRadius="16"
+                          HasShadow="False"
+                          BorderColor="Transparent"
+                          HorizontalOptions="Start">
+                        <Label Text="{Binding Session.State}"
+                              TextColor="White"
+                              FontSize="15"
+                              FontAttributes="Bold" />
+                    </Frame>
+
+                    <Label Grid.Row="3"
+                          TextColor="#7F8C8D"
+                          FontSize="17">
+                        <Label.FormattedText>
+                            <FormattedString>
+                                <Span Text="{Binding Session.CourtCount}" />
+                                <Span Text=" courts • " />
+                                <Span Text="{Binding Session.SessionPlayers.Count}" />
+                                <Span Text=" players" />
+                            </FormattedString>
+                        </Label.FormattedText>
+                    </Label>
+                </Grid>
+            </Frame>
+
+            <Frame BackgroundColor="White"
+                  BorderColor="#E8ECEF"
+                  CornerRadius="16"
+                  Padding="16"
+                  HasShadow="True">
+
+                <Grid RowDefinitions="Auto,Auto" RowSpacing="12">
+                    <Label Grid.Row="0"
+                          Text="Match Summary"
+                          TextColor="#2C3E50"
+                          FontSize="18"
+                          FontAttributes="Bold" />
+
+                    <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="16">
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Total Matches"
+                                  TextColor="#7F8C8D"
+                                  FontSize="13" />
+                            <Label Text="{Binding TotalMatches}"
+                                  TextColor="#2C3E50"
+                                  FontSize="24"
+                                  FontAttributes="Bold" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Completed"
+                                  TextColor="#7F8C8D"
+                                  FontSize="13" />
+                            <Label Text="{Binding CompletedMatches}"
+                                  TextColor="#27AE60"
+                                  FontSize="24"
+                                  FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Grid>
+            </Frame>
+
+            <Button Text="View Analytics"
+                   Command="{Binding NavigateToAnalyticsCommand}"
+                   BackgroundColor="#3498DB"
+                   TextColor="White"
+                   CornerRadius="12"
+                   Padding="16"
+                   FontSize="17"
+                   FontAttributes="Bold" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

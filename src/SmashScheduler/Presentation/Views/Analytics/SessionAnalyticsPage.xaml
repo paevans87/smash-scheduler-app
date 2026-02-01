@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:SmashScheduler.Presentation.ViewModels.Analytics"
+             x:Class="SmashScheduler.Presentation.Views.Analytics.SessionAnalyticsPage"
+             x:DataType="viewmodels:SessionAnalyticsViewModel"
+             Title="Session Analytics">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="24">
+
+            <Label Text="Session Analytics"
+                  TextColor="#2C3E50"
+                  FontSize="28"
+                  FontAttributes="Bold" />
+
+            <Frame BackgroundColor="White"
+                  BorderColor="#E8ECEF"
+                  CornerRadius="16"
+                  Padding="24"
+                  HasShadow="True">
+
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="20">
+                    <VerticalStackLayout Grid.Row="0" Spacing="4">
+                        <Label Text="Total Matches"
+                              TextColor="#7F8C8D"
+                              FontSize="15" />
+                        <Label Text="{Binding TotalMatches}"
+                              TextColor="#2C3E50"
+                              FontSize="36"
+                              FontAttributes="Bold" />
+                    </VerticalStackLayout>
+
+                    <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="16">
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Automated"
+                                  TextColor="#7F8C8D"
+                                  FontSize="13" />
+                            <Label Text="{Binding AutomatedMatches}"
+                                  TextColor="#27AE60"
+                                  FontSize="24"
+                                  FontAttributes="Bold" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="4">
+                            <Label Text="Manual"
+                                  TextColor="#7F8C8D"
+                                  FontSize="13" />
+                            <Label Text="{Binding ManualMatches}"
+                                  TextColor="#F39C12"
+                                  FontSize="24"
+                                  FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <BoxView Grid.Row="2"
+                            Color="#E8ECEF"
+                            HeightRequest="1" />
+
+                    <VerticalStackLayout Grid.Row="3" Spacing="4">
+                        <Label Text="Override Rate"
+                              TextColor="#7F8C8D"
+                              FontSize="15" />
+
+                        <Label Text="{Binding OverrideRate, StringFormat='{0:F1}%'}"
+                              TextColor="#3498DB"
+                              FontSize="36"
+                              FontAttributes="Bold" />
+
+                        <Label Text="Lower is better - indicates algorithm effectiveness"
+                              TextColor="#7F8C8D"
+                              FontSize="13"
+                              Margin="0,4,0,0" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Frame>
+
+            <Frame BackgroundColor="White"
+                  BorderColor="#E8ECEF"
+                  CornerRadius="16"
+                  Padding="24"
+                  HasShadow="True">
+
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Total Game Time"
+                          TextColor="#7F8C8D"
+                          FontSize="15" />
+
+                    <Label Text="{Binding TotalGameTime}"
+                          TextColor="#2C3E50"
+                          FontSize="36"
+                          FontAttributes="Bold" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Button Text="Close"
+                   Command="{Binding CloseCommand}"
+                   BackgroundColor="#3498DB"
+                   TextColor="White"
+                   CornerRadius="12"
+                   Padding="16"
+                   FontSize="17"
+                   FontAttributes="Bold" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

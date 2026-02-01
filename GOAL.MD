@@ -36,7 +36,7 @@ SmashScheduler is a specialised club management tool designed to remove the manu
 
 ## 6. Known Constraints
 - **Language**: English (UK) exclusively.
-- **Tech Preference**: C#, .NET MAUI (Mobile), SQLite.
+- **Tech Preference**: C#, Blazor (Web SPA), SQLite or browser-based storage.
 - **Security**: Basic local storage; no PII (Personally Identifiable Information) or sensitive data encryption required.
 - **UX/UI**: The app should be intuitive and with an attractive, modern look.
 

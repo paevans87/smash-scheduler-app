@@ -1,26 +1,20 @@
+using SmashScheduler.Application.Interfaces.Repositories;
 using SmashScheduler.Domain.Entities;
 using SmashScheduler.Domain.Enums;
-using SmashScheduler.Application.Interfaces.Repositories;
 
 namespace SmashScheduler.Application.Services.PlayerManagement;
 
-public class PlayerService : IPlayerService
+public class PlayerService(
+    IPlayerRepository playerRepository) : IPlayerService
 {
-    private readonly IPlayerRepository _playerRepository;
-
-    public PlayerService(IPlayerRepository playerRepository)
-    {
-        _playerRepository = playerRepository;
-    }
-
     public async Task<Player?> GetByIdAsync(Guid id)
     {
-        return await _playerRepository.GetByIdAsync(id);
+        return await playerRepository.GetByIdAsync(id);
     }
 
-    public async Task<List<Player>> GetByClubIdAsync(Guid clubId)
+    public async Task<List<Player>> GetPlayersByClubIdAsync(Guid clubId)
     {
-        return await _playerRepository.GetByClubIdAsync(clubId);
+        return await playerRepository.GetByClubIdAsync(clubId);
     }
 
     public async Task<Player> CreatePlayerAsync(
@@ -30,11 +24,6 @@ public class PlayerService : IPlayerService
         Gender gender,
         PlayStylePreference playStylePreference)
     {
-        if (skillLevel < 1 || skillLevel > 10)
-        {
-            throw new ArgumentException("Skill level must be between 1 and 10");
-        }
-
         var player = new Player
         {
             Id = Guid.NewGuid(),
@@ -45,55 +34,17 @@ public class PlayerService : IPlayerService
             PlayStylePreference = playStylePreference
         };
 
-        await _playerRepository.InsertAsync(player);
+        await playerRepository.InsertAsync(player);
         return player;
     }
 
     public async Task UpdatePlayerAsync(Player player)
     {
-        if (player.SkillLevel < 1 || player.SkillLevel > 10)
-        {
-            throw new ArgumentException("Skill level must be between 1 and 10");
-        }
-
-        await _playerRepository.UpdateAsync(player);
+        await playerRepository.UpdateAsync(player);
     }
 
     public async Task DeletePlayerAsync(Guid id)
     {
-        await _playerRepository.DeleteAsync(id);
-    }
-
-// STUB:     public async Task AddToBlacklistAsync(Guid playerId, Guid blacklistedPlayerId, BlacklistType blacklistType)
-    {
-// STUB:         var existingBlacklists = await _playerRepository.GetBlacklistsByPlayerIdAsync(playerId);
-
-        var isDuplicate = existingBlacklists.Any(b =>
-            b.BlacklistedPlayerId == blacklistedPlayerId &&
-            b.BlacklistType == blacklistType);
-
-        if (isDuplicate)
-        {
-            return;
-        }
-
-        var blacklist = new PlayerBlacklist
-        {
-            PlayerId = playerId,
-            BlacklistedPlayerId = blacklistedPlayerId,
-            BlacklistType = blacklistType
-        };
-
-// STUB:         await _playerRepository.AddToBlacklistAsync(blacklist);
-    }
-
-// STUB:     public async Task RemoveFromBlacklistAsync(Guid playerId, Guid blacklistedPlayerId)
-    {
-// STUB:         await _playerRepository.RemoveFromBlacklistAsync(playerId, blacklistedPlayerId);
-    }
-
-    public async Task<List<PlayerBlacklist>> GetBlacklistsAsync(Guid playerId)
-    {
-// STUB:         return await _playerRepository.GetBlacklistsByPlayerIdAsync(playerId);
+        await playerRepository.DeleteAsync(id);
     }
 }

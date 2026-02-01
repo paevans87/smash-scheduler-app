@@ -1,33 +1,22 @@
+using SmashScheduler.Application.Interfaces.Repositories;
 using SmashScheduler.Domain.Entities;
 using SmashScheduler.Domain.Enums;
-using SmashScheduler.Application.Interfaces.Repositories;
 
 namespace SmashScheduler.Application.Services.ClubManagement;
 
-public class ClubService : IClubService
+public class ClubService(
+    IClubRepository clubRepository,
+    IPlayerRepository playerRepository,
+    ISessionRepository sessionRepository) : IClubService
 {
-    private readonly IClubRepository _clubRepository;
-    private readonly IPlayerRepository _playerRepository;
-    private readonly ISessionRepository _sessionRepository;
-
-    public ClubService(
-        IClubRepository clubRepository,
-        IPlayerRepository playerRepository,
-        ISessionRepository sessionRepository)
-    {
-        _clubRepository = clubRepository;
-        _playerRepository = playerRepository;
-        _sessionRepository = sessionRepository;
-    }
-
     public async Task<Club?> GetByIdAsync(Guid id)
     {
-        return await _clubRepository.GetByIdAsync(id);
+        return await clubRepository.GetByIdAsync(id);
     }
 
     public async Task<List<Club>> GetAllClubsAsync()
     {
-        return await _clubRepository.GetAllAsync();
+        return await clubRepository.GetAllAsync();
     }
 
     public async Task<Club> CreateClubAsync(string name, int defaultCourtCount, GameType gameType)
@@ -40,29 +29,29 @@ public class ClubService : IClubService
             GameType = gameType
         };
 
-        await _clubRepository.InsertAsync(club);
+        await clubRepository.InsertAsync(club);
         return club;
     }
 
     public async Task UpdateClubAsync(Club club)
     {
-        await _clubRepository.UpdateAsync(club);
+        await clubRepository.UpdateAsync(club);
     }
 
     public async Task DeleteClubAsync(Guid id)
     {
-        var players = await _playerRepository.GetByClubIdAsync(id);
+        var players = await playerRepository.GetByClubIdAsync(id);
         foreach (var player in players)
         {
-            await _playerRepository.DeleteAsync(player.Id);
+            await playerRepository.DeleteAsync(player.Id);
         }
 
-        var sessions = await _sessionRepository.GetByClubIdAsync(id);
+        var sessions = await sessionRepository.GetByClubIdAsync(id);
         foreach (var session in sessions)
         {
-            await _sessionRepository.DeleteAsync(session.Id);
+            await sessionRepository.DeleteAsync(session.Id);
         }
 
-        await _clubRepository.DeleteAsync(id);
+        await clubRepository.DeleteAsync(id);
     }
 }

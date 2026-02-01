@@ -47,7 +47,7 @@ SmashScheduler/
 
 ### Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - .NET MAUI workload
 
 ### Installation
@@ -73,24 +73,26 @@ SmashScheduler/
 **Android:**
 ```bash
 cd src/SmashScheduler
-dotnet build -t:Run -f net8.0-android
+dotnet build -t:Run -f net10.0-android
 ```
 
 **iOS (Mac only):**
 ```bash
 cd src/SmashScheduler
-dotnet build -t:Run -f net8.0-ios
+dotnet build -t:Run -f net10.0-ios
 ```
+
+**Note:** Building for Android or iOS requires the Android SDK or Xcode respectively. The project is multi-targeted to also support `net10.0` for testing and development without platform SDKs.
 
 ### Running Tests
 
 ```bash
-dotnet test
+dotnet test --framework net10.0
 ```
 
 Or for detailed output:
 ```bash
-dotnet test --logger "console;verbosity=detailed"
+dotnet test --framework net10.0 --logger "console;verbosity=detailed"
 ```
 
 ## Architecture

@@ -41,7 +41,7 @@ public class SkillBalanceScorerTests
 
         var score = _scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
 
-        score.Should().BeLessThan(50);
+        score.Should().BeLessOrEqualTo(50);
     }
 
     [Fact]

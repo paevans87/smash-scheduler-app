@@ -1,0 +1,92 @@
+@using MudBlazor
+@using SmashScheduler.Application.Services.ClubManagement
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Domain.Enums
+@inject IClubService ClubService
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@(IsEditMode ? Icons.Material.Filled.Edit : Icons.Material.Filled.Add)" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">@(IsEditMode ? "Edit Club" : "Create Club")</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_name"
+                          Label="Club Name"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          RequiredError="Club name is required" />
+
+            <MudNumericField T="int"
+                             @bind-Value="_courtCount"
+                             Label="Default Court Count"
+                             Variant="Variant.Outlined"
+                             Min="1"
+                             Max="20" />
+
+            <MudSelect T="GameType"
+                       @bind-Value="_gameType"
+                       Label="Game Type"
+                       Variant="Variant.Outlined">
+                @foreach (GameType type in Enum.GetValues<GameType>())
+                {
+                    <MudSelectItem Value="@type">@type</MudSelectItem>
+                }
+            </MudSelect>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Submit"
+                   Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@(!IsValid)">
+            @(IsEditMode ? "Save Changes" : "Create Club")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public Club? Club { get; set; }
+
+    private string _name = string.Empty;
+    private int _courtCount = 4;
+    private GameType _gameType = GameType.Doubles;
+
+    private bool IsEditMode => Club != null;
+    private bool IsValid => !string.IsNullOrWhiteSpace(_name);
+
+    protected override void OnInitialized()
+    {
+        if (Club != null)
+        {
+            _name = Club.Name;
+            _courtCount = Club.DefaultCourtCount;
+            _gameType = Club.GameType;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        if (!IsValid) return;
+
+        if (IsEditMode)
+        {
+            Club!.Name = _name;
+            Club.DefaultCourtCount = _courtCount;
+            Club.GameType = _gameType;
+            await ClubService.UpdateClubAsync(Club);
+            MudDialog.Close(DialogResult.Ok(Club));
+        }
+        else
+        {
+            var club = await ClubService.CreateClubAsync(_name, _courtCount, _gameType);
+            MudDialog.Close(DialogResult.Ok(club));
+        }
+    }
+}

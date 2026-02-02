@@ -1,0 +1,120 @@
+@using MudBlazor
+@using SmashScheduler.Application.Services.PlayerManagement
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Domain.Enums
+@inject IPlayerService PlayerService
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@(IsEditMode ? Icons.Material.Filled.Edit : Icons.Material.Filled.PersonAdd)" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">@(IsEditMode ? "Edit Player" : "Add Player")</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_name"
+                          Label="Player Name"
+                          Variant="Variant.Outlined"
+                          Required="true"
+                          RequiredError="Player name is required" />
+
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.body2" Style="min-width: 80px;">Skill Level</MudText>
+                <MudRating @bind-SelectedValue="_skillLevel" MaxValue="10" />
+                <MudChip T="string" Size="Size.Small" Color="@GetSkillColour()">@_skillLevel</MudChip>
+            </MudStack>
+
+            <MudSelect T="Gender"
+                       @bind-Value="_gender"
+                       Label="Gender"
+                       Variant="Variant.Outlined">
+                @foreach (Gender gender in Enum.GetValues<Gender>())
+                {
+                    <MudSelectItem Value="@gender">@gender</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="PlayStylePreference"
+                       @bind-Value="_playStylePreference"
+                       Label="Play Style Preference"
+                       Variant="Variant.Outlined">
+                @foreach (PlayStylePreference style in Enum.GetValues<PlayStylePreference>())
+                {
+                    <MudSelectItem Value="@style">@GetPlayStyleLabel(style)</MudSelectItem>
+                }
+            </MudSelect>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Submit"
+                   Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@(!IsValid)">
+            @(IsEditMode ? "Save Changes" : "Add Player")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public Player? Player { get; set; }
+    [Parameter] public Guid ClubId { get; set; }
+
+    private string _name = string.Empty;
+    private int _skillLevel = 5;
+    private Gender _gender = Gender.Male;
+    private PlayStylePreference _playStylePreference = PlayStylePreference.Mixed;
+
+    private bool IsEditMode => Player != null;
+    private bool IsValid => !string.IsNullOrWhiteSpace(_name);
+
+    protected override void OnInitialized()
+    {
+        if (Player != null)
+        {
+            _name = Player.Name;
+            _skillLevel = Player.SkillLevel;
+            _gender = Player.Gender;
+            _playStylePreference = Player.PlayStylePreference;
+        }
+    }
+
+    private Color GetSkillColour() => _skillLevel switch
+    {
+        <= 3 => Color.Error,
+        <= 6 => Color.Warning,
+        _ => Color.Success
+    };
+
+    private string GetPlayStyleLabel(PlayStylePreference style) => style switch
+    {
+        PlayStylePreference.Level => "Level-based (similar skill)",
+        PlayStylePreference.Mixed => "Mixed (varied skill levels)",
+        PlayStylePreference.Open => "Open (no preference)",
+        _ => style.ToString()
+    };
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        if (!IsValid) return;
+
+        if (IsEditMode)
+        {
+            Player!.Name = _name;
+            Player.SkillLevel = _skillLevel;
+            Player.Gender = _gender;
+            Player.PlayStylePreference = _playStylePreference;
+            await PlayerService.UpdatePlayerAsync(Player);
+            MudDialog.Close(DialogResult.Ok(Player));
+        }
+        else
+        {
+            var player = await PlayerService.CreatePlayerAsync(ClubId, _name, _skillLevel, _gender, _playStylePreference);
+            MudDialog.Close(DialogResult.Ok(player));
+        }
+    }
+}

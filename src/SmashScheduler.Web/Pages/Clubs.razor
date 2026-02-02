@@ -1,9 +1,11 @@
 @page "/clubs"
 @using MudBlazor
 @using SmashScheduler.Domain.Enums
+@using SmashScheduler.Web.Components
 @inherits FluxorComponent
 @inject IState<ClubState> ClubState
 @inject IDispatcher Dispatcher
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 
 <PageTitle>Clubs</PageTitle>
@@ -35,7 +37,7 @@ else if (!ClubState.Value.Clubs.Any())
                    Color="Color.Primary"
                    Size="Size.Large"
                    StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="CreateTestClub">
+                   OnClick="OpenCreateDialog">
             Create Club
         </MudButton>
     </div>
@@ -82,7 +84,7 @@ else
             StartIcon="@Icons.Material.Filled.Add"
             Label="Add Club"
             Size="Size.Large"
-            OnClick="CreateTestClub"
+            OnClick="OpenCreateDialog"
             Style="position: fixed; bottom: 24px; right: 24px; z-index: 1000;" />
 }
 
@@ -99,9 +101,21 @@ else
         Navigation.NavigateTo($"/clubs/{clubId}");
     }
 
-    private void CreateTestClub()
+    private async Task OpenCreateDialog()
     {
-        var count = ClubState.Value.Clubs.Count() + 1;
-        Dispatcher.Dispatch(new CreateClubAction($"Test Club {count}", 4, GameType.Doubles));
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ClubEditorDialog>("Create Club", options);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false })
+        {
+            Dispatcher.Dispatch(new LoadClubsAction());
+        }
     }
 }

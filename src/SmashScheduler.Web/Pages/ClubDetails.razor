@@ -2,7 +2,9 @@
 @using MudBlazor
 @using SmashScheduler.Application.Services.ClubManagement
 @using SmashScheduler.Domain.Entities
+@using SmashScheduler.Web.Components
 @inject IClubService ClubService
+@inject IDialogService DialogService
 @inject NavigationManager Navigation
 
 <PageTitle>Club Details</PageTitle>
@@ -16,21 +18,28 @@
 else
 {
     <MudStack Spacing="4">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                           Color="Color.Default"
-                           OnClick="GoBack" />
-            <MudStack>
-                <MudText Typo="Typo.h4" Style="font-weight: 700;">@_club.Name</MudText>
-                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary">
-                        @_club.DefaultCourtCount courts
-                    </MudChip>
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Secondary">
-                        @_club.GameType
-                    </MudChip>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                               Color="Color.Default"
+                               OnClick="GoBack" />
+                <MudStack>
+                    <MudText Typo="Typo.h4" Style="font-weight: 700;">@_club.Name</MudText>
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary">
+                            @_club.DefaultCourtCount courts
+                        </MudChip>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Secondary">
+                            @_club.GameType
+                        </MudChip>
+                    </MudStack>
                 </MudStack>
             </MudStack>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                           Color="Color.Primary"
+                           Variant="Variant.Filled"
+                           Size="Size.Medium"
+                           OnClick="OpenEditDialog" />
         </MudStack>
 
         <MudGrid Spacing="3">
@@ -108,5 +117,28 @@ else
     private void GoBack()
     {
         Navigation.NavigateTo("/clubs");
+    }
+
+    private async Task OpenEditDialog()
+    {
+        var parameters = new DialogParameters<ClubEditorDialog>
+        {
+            { x => x.Club, _club }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ClubEditorDialog>("Edit Club", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false })
+        {
+            _club = await ClubService.GetByIdAsync(ClubId);
+        }
     }
 }

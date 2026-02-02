@@ -29,12 +29,20 @@ else
                                 <MudText Typo="Typo.body2">@player.Gender</MudText>
                                 <MudText Typo="Typo.body2">@player.PlayStylePreference</MudText>
                             </div>
-                            <MudTooltip Text="Manage Blacklist">
-                                <MudIconButton Icon="@Icons.Material.Filled.Block"
-                                               Color="Color.Default"
-                                               Size="Size.Medium"
-                                               OnClick="@(() => OpenBlacklistDialog(player))" />
-                            </MudTooltip>
+                            <MudStack Row="true" Spacing="1">
+                                <MudTooltip Text="Edit Player">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Color="Color.Primary"
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => OpenEditDialog(player))" />
+                                </MudTooltip>
+                                <MudTooltip Text="Manage Blacklist">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Block"
+                                                   Color="Color.Default"
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => OpenBlacklistDialog(player))" />
+                                </MudTooltip>
+                            </MudStack>
                         </MudStack>
                     </MudCardContent>
                 </MudCard>
@@ -45,7 +53,7 @@ else
     <MudFab Color="Color.Primary"
             StartIcon="@Icons.Material.Filled.Add"
             Label="Add Player"
-            OnClick="CreateTestPlayer"
+            OnClick="OpenCreateDialog"
             Style="position: fixed; bottom: 16px; right: 16px;" />
 }
 
@@ -58,11 +66,51 @@ else
         _players = await PlayerService.GetByClubIdAsync(ClubId);
     }
 
-    private async Task CreateTestPlayer()
+    private async Task OpenCreateDialog()
     {
-        var count = _players?.Count ?? 0;
-        await PlayerService.CreatePlayerAsync(ClubId, $"Player {count + 1}", 5, Gender.Male, PlayStylePreference.Mixed);
-        _players = await PlayerService.GetByClubIdAsync(ClubId);
+        var parameters = new DialogParameters<PlayerEditorDialog>
+        {
+            { x => x.ClubId, ClubId }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<PlayerEditorDialog>("Add Player", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false })
+        {
+            _players = await PlayerService.GetByClubIdAsync(ClubId);
+        }
+    }
+
+    private async Task OpenEditDialog(Player player)
+    {
+        var parameters = new DialogParameters<PlayerEditorDialog>
+        {
+            { x => x.Player, player },
+            { x => x.ClubId, ClubId }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<PlayerEditorDialog>("Edit Player", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false })
+        {
+            _players = await PlayerService.GetByClubIdAsync(ClubId);
+        }
     }
 
     private async Task OpenBlacklistDialog(Player player)

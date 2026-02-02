@@ -25,6 +25,12 @@
         <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
     </MudStack>
 }
+else if (!string.IsNullOrEmpty(ClubState.Value.ErrorMessage))
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">
+        @ClubState.Value.ErrorMessage
+    </MudAlert>
+}
 else if (!ClubState.Value.Clubs.Any())
 {
     <div class="empty-state">

@@ -1,22 +1,23 @@
 @page "/clubs/{ClubId:guid}/sessions"
-@using SmashScheduler.Application.Services.SessionManagement
 @using SmashScheduler.Domain.Entities
 @using SmashScheduler.Domain.Enums
-@inject ISessionService SessionService
+@inherits FluxorComponent
+@inject IState<SessionStoreState> SessionState
+@inject IDispatcher Dispatcher
 @inject NavigationManager Navigation
 
 <PageTitle>Sessions</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">Sessions</MudText>
 
-<MudChipSet T="SessionState?" @bind-SelectedValue="_selectedState" Class="mb-4">
+<MudChipSet T="SessionState?" @bind-SelectedValue="_selectedState" @bind-SelectedValue:after="OnFilterChanged" Class="mb-4">
     <MudChip T="SessionState?" Value="@((SessionState?)null)" Color="Color.Default">All</MudChip>
-    <MudChip T="SessionState?" Value="SessionState.Draft" Color="Color.Default">Draft</MudChip>
-    <MudChip T="SessionState?" Value="SessionState.Active" Color="Color.Success">Active</MudChip>
-    <MudChip T="SessionState?" Value="SessionState.Complete" Color="Color.Info">Complete</MudChip>
+    <MudChip T="SessionState?" Value="SmashScheduler.Domain.Enums.SessionState.Draft" Color="Color.Default">Draft</MudChip>
+    <MudChip T="SessionState?" Value="SmashScheduler.Domain.Enums.SessionState.Active" Color="Color.Success">Active</MudChip>
+    <MudChip T="SessionState?" Value="SmashScheduler.Domain.Enums.SessionState.Complete" Color="Color.Info">Complete</MudChip>
 </MudChipSet>
 
-@if (_sessions == null)
+@if (SessionState.Value.IsLoading)
 {
     <MudProgressCircular Indeterminate="true" />
 }
@@ -58,37 +59,40 @@ else
 
 @code {
     [Parameter] public Guid ClubId { get; set; }
-    private List<Session>? _sessions;
     private SessionState? _selectedState;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        _sessions = await SessionService.GetByClubIdAsync(ClubId);
+        base.OnInitialized();
+        Dispatcher.Dispatch(new LoadSessionsAction(ClubId));
+    }
+
+    private void OnFilterChanged()
+    {
+        Dispatcher.Dispatch(new SetSessionFilterAction(_selectedState));
     }
 
     private IEnumerable<Session> GetFilteredSessions()
     {
-        if (_sessions == null) return Enumerable.Empty<Session>();
-        if (_selectedState == null) return _sessions.OrderByDescending(s => s.ScheduledDateTime);
-        return _sessions.Where(s => s.State == _selectedState).OrderByDescending(s => s.ScheduledDateTime);
+        var sessions = SessionState.Value.Sessions;
+        if (_selectedState == null) return sessions.OrderByDescending(s => s.ScheduledDateTime);
+        return sessions.Where(s => s.State == _selectedState).OrderByDescending(s => s.ScheduledDateTime);
     }
 
     private void NavigateToSession(Session session)
     {
         var page = session.State switch
         {
-            SessionState.Draft => "draft",
-            SessionState.Active => "active",
-            SessionState.Complete => "complete",
+            SmashScheduler.Domain.Enums.SessionState.Draft => "draft",
+            SmashScheduler.Domain.Enums.SessionState.Active => "active",
+            SmashScheduler.Domain.Enums.SessionState.Complete => "complete",
             _ => "draft"
         };
         Navigation.NavigateTo($"/clubs/{ClubId}/sessions/{session.Id}/{page}");
     }
 
-    private async Task CreateSession()
+    private void CreateSession()
     {
-        var session = await SessionService.CreateSessionAsync(ClubId, DateTime.Now, null);
-        _sessions = await SessionService.GetByClubIdAsync(ClubId);
-        Navigation.NavigateTo($"/clubs/{ClubId}/sessions/{session.Id}/draft");
+        Dispatcher.Dispatch(new CreateSessionAction(ClubId));
     }
 }

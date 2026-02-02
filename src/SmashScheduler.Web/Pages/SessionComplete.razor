@@ -53,10 +53,20 @@ else
     </MudGrid>
 
     <MudText Typo="Typo.h5" GutterBottom="true">Match History</MudText>
-    <CourtDisplay Matches="@_matches"
-                  CourtCount="@GetMaxCourtNumber()"
-                  PlayerLookup="@_playerLookup"
-                  IsReadOnly="true" />
+    <MudGrid>
+        @foreach (var match in _matches.OrderBy(m => m.StartedAt))
+        {
+            <MudItem xs="12" sm="6" md="4">
+                <MatchCard Match="@match"
+                           PlayerLookup="@_playerLookup"
+                           IsReadOnly="true" />
+            </MudItem>
+        }
+    </MudGrid>
+    @if (!_matches.Any())
+    {
+        <MudText Typo="Typo.body1" Color="Color.Secondary">No matches were played in this session.</MudText>
+    }
 
     <MudStack Row="true" Spacing="2" Class="mt-4">
         <MudButton Variant="Variant.Outlined" OnClick="GoBack">Back to Sessions</MudButton>
@@ -86,12 +96,6 @@ else
                 .Where(sp => sp.Player != null)
                 .ToDictionary(sp => sp.PlayerId, sp => sp.Player!);
         }
-    }
-
-    private int GetMaxCourtNumber()
-    {
-        if (!_matches.Any()) return _session?.CourtCount ?? 0;
-        return Math.Max(_matches.Max(m => m.CourtNumber), _session?.CourtCount ?? 0);
     }
 
     private void GoBack()

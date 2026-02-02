@@ -1,4 +1,5 @@
 using Fluxor;
+using Microsoft.AspNetCore.Components;
 using SmashScheduler.Application.Services.SessionManagement;
 using SmashScheduler.Application.Services.MatchManagement;
 using SmashScheduler.Application.Services.Matchmaking;
@@ -11,7 +12,8 @@ public class SessionEffects(
     ISessionService sessionService,
     ISessionStateManager sessionStateManager,
     IMatchService matchService,
-    IMatchmakingService matchmakingService)
+    IMatchmakingService matchmakingService,
+    NavigationManager navigationManager)
 {
     [EffectMethod]
     public async Task HandleLoadSessionsAction(LoadSessionsAction action, IDispatcher dispatcher)
@@ -59,6 +61,7 @@ public class SessionEffects(
         {
             var session = await sessionService.CreateSessionAsync(action.ClubId, DateTime.Now, null);
             dispatcher.Dispatch(new CreateSessionSuccessAction(session));
+            navigationManager.NavigateTo($"/clubs/{action.ClubId}/sessions/{session.Id}/draft");
         }
         catch (Exception ex)
         {

@@ -30,12 +30,11 @@ else
         }
     </MudGrid>
     
-    <MudFab Color="Color.Primary" 
+    <MudFab Color="Color.Primary"
             StartIcon="@Icons.Material.Filled.Add"
+            Label="Add Player"
             OnClick="CreateTestPlayer"
-            Style="position: fixed; bottom: 16px; right: 16px;">
-        Add Player
-    </MudFab>
+            Style="position: fixed; bottom: 16px; right: 16px;" />
 }
 
 @code {
@@ -49,7 +48,8 @@ else
 
     private async Task CreateTestPlayer()
     {
-        await PlayerService.CreatePlayerAsync(ClubId, $"Player {_players.Count + 1}", 5, Gender.Male, PlayStylePreference.Mixed);
+        var count = _players?.Count ?? 0;
+        await PlayerService.CreatePlayerAsync(ClubId, $"Player {count + 1}", 5, Gender.Male, PlayStylePreference.Mixed);
         _players = await PlayerService.GetByClubIdAsync(ClubId);
     }
 }

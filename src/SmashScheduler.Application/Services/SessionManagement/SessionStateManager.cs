@@ -3,9 +3,7 @@ using SmashScheduler.Domain.Enums;
 
 namespace SmashScheduler.Application.Services.SessionManagement;
 
-public class SessionStateManager(
-    ISessionRepository sessionRepository,
-    IMatchRepository matchRepository) : ISessionStateManager
+public class SessionStateManager(ISessionRepository sessionRepository) : ISessionStateManager
 {
     public async Task ActivateSessionAsync(Guid sessionId)
     {

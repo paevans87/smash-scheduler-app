@@ -5,8 +5,7 @@ namespace SmashScheduler.Application.Services.Analytics;
 
 public class AnalyticsService(
     ISessionRepository sessionRepository,
-    IMatchRepository matchRepository,
-    IPlayerRepository playerRepository) : IAnalyticsService
+    IMatchRepository matchRepository) : IAnalyticsService
 {
     public async Task<SessionStatistics> GetSessionStatisticsAsync(Guid sessionId)
     {

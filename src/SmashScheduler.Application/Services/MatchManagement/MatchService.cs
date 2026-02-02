@@ -24,6 +24,7 @@ public class MatchService(IMatchRepository matchRepository) : IMatchService
             Id = Guid.NewGuid(),
             SessionId = sessionId,
             CourtNumber = courtNumber,
+            PlayerIds = playerIds,
             State = MatchState.InProgress,
             WasAutomated = wasAutomated,
             StartedAt = DateTime.UtcNow

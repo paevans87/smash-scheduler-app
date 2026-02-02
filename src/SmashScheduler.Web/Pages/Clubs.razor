@@ -1,21 +1,22 @@
 @page "/clubs"
-@using SmashScheduler.Application.Services.ClubManagement
-@using SmashScheduler.Domain.Entities
 @using SmashScheduler.Domain.Enums
-@inject IClubService ClubService
+@inherits FluxorComponent
+@inject IState<ClubState> ClubState
+@inject IDispatcher Dispatcher
+@inject NavigationManager Navigation
 
 <PageTitle>Clubs</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">Clubs</MudText>
 
-@if (_clubs == null)
+@if (ClubState.Value.IsLoading)
 {
     <MudProgressCircular Indeterminate="true" />
 }
 else
 {
     <MudGrid>
-        @foreach (var club in _clubs)
+        @foreach (var club in ClubState.Value.Clubs)
         {
             <MudItem xs="12" sm="6" md="4">
                 <MudCard Style="cursor:pointer" @onclick="() => NavigateToClub(club.Id)">
@@ -28,32 +29,35 @@ else
             </MudItem>
         }
     </MudGrid>
-    
-    <MudFab Color="Color.Primary" 
+
+    @if (!ClubState.Value.Clubs.Any())
+    {
+        <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-4">No clubs found. Create one to get started.</MudText>
+    }
+
+    <MudFab Color="Color.Primary"
             StartIcon="@Icons.Material.Filled.Add"
+            Label="Add Club"
             OnClick="CreateTestClub"
-            Style="position: fixed; bottom: 16px; right: 16px;">
-        Add Club
-    </MudFab>
+            Style="position: fixed; bottom: 16px; right: 16px;" />
 }
 
 @code {
-    private List<Club>? _clubs;
-
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        _clubs = await ClubService.GetAllClubsAsync();
+        base.OnInitialized();
+        Dispatcher.Dispatch(new LoadClubsAction());
     }
 
     private void NavigateToClub(Guid clubId)
     {
+        Dispatcher.Dispatch(new SelectClubAction(clubId));
         Navigation.NavigateTo($"/clubs/{clubId}");
     }
 
-    private async Task CreateTestClub()
+    private void CreateTestClub()
     {
-        await ClubService.CreateClubAsync($"Test Club {_clubs.Count + 1}", 4, GameType.Doubles);
-        _clubs = await ClubService.GetAllClubsAsync();
+        var count = ClubState.Value.Clubs.Count() + 1;
+        Dispatcher.Dispatch(new CreateClubAction($"Test Club {count}", 4, GameType.Doubles));
     }
 }
-@inject NavigationManager Navigation

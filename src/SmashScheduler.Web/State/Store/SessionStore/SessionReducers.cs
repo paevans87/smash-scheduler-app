@@ -62,6 +62,7 @@ public static class SessionReducers
                         Id = m.Id,
                         SessionId = m.SessionId,
                         CourtNumber = m.CourtNumber,
+                        PlayerIds = m.PlayerIds,
                         State = MatchState.Completed,
                         WasAutomated = m.WasAutomated,
                         StartedAt = m.StartedAt,

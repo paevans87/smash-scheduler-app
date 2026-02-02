@@ -1,16 +1,17 @@
 @using MudBlazor
 
-<MudChip T="string" Color="@GetColour()" Size="@Size">@SkillLevel</MudChip>
+<div class="skill-badge @GetSkillClass()" title="Skill Level @SkillLevel">
+    <span>@SkillLevel</span>
+</div>
 
 @code {
     [Parameter] public int SkillLevel { get; set; }
     [Parameter] public Size Size { get; set; } = Size.Small;
 
-    private Color GetColour() => SkillLevel switch
+    private string GetSkillClass() => SkillLevel switch
     {
-        <= 3 => Color.Success,
-        <= 6 => Color.Info,
-        <= 9 => Color.Warning,
-        _ => Color.Error
+        <= 3 => "skill-badge--beginner",
+        <= 6 => "skill-badge--intermediate",
+        _ => "skill-badge--advanced"
     };
 }

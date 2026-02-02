@@ -1,4 +1,5 @@
 @page "/clubs/{ClubId:guid}"
+@using MudBlazor
 @using SmashScheduler.Application.Services.ClubManagement
 @using SmashScheduler.Domain.Entities
 @inject IClubService ClubService
@@ -8,25 +9,81 @@
 
 @if (_club == null)
 {
-    <MudProgressCircular Indeterminate="true" />
+    <MudStack AlignItems="AlignItems.Center" Class="py-8">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudStack>
 }
 else
 {
-    <MudText Typo="Typo.h3" GutterBottom="true">@_club.Name</MudText>
-    
-    <MudCard Class="mt-4">
-        <MudCardContent>
-            <MudText Typo="Typo.h6">Club Information</MudText>
-            <MudText><b>Default Courts:</b> @_club.DefaultCourtCount</MudText>
-            <MudText><b>Game Type:</b> @_club.GameType</MudText>
-            <MudText><b>Created:</b> @_club.CreatedAt.ToShortDateString()</MudText>
-        </MudCardContent>
-        <MudCardActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ViewPlayers">View Players</MudButton>
-            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="ViewSessions">View Sessions</MudButton>
-            <MudButton Variant="Variant.Outlined" OnClick="GoBack">Back to Clubs</MudButton>
-        </MudCardActions>
-    </MudCard>
+    <MudStack Spacing="4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                           Color="Color.Default"
+                           OnClick="GoBack" />
+            <MudStack>
+                <MudText Typo="Typo.h4" Style="font-weight: 700;">@_club.Name</MudText>
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary">
+                        @_club.DefaultCourtCount courts
+                    </MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Filled" Color="Color.Secondary">
+                        @_club.GameType
+                    </MudChip>
+                </MudStack>
+            </MudStack>
+        </MudStack>
+
+        <MudGrid Spacing="3">
+            <MudItem xs="12" sm="6">
+                <MudCard Class="smash-card smash-card-clickable" Elevation="2" @onclick="ViewPlayers">
+                    <MudCardContent>
+                        <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Center">
+                            <MudAvatar Size="Size.Large" Color="Color.Primary" Variant="Variant.Filled">
+                                <MudIcon Icon="@Icons.Material.Filled.Groups" />
+                            </MudAvatar>
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.h6" Style="font-weight: 600;">Players</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Manage club members</MudText>
+                            </MudStack>
+                            <MudSpacer />
+                            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Secondary" />
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudCard Class="smash-card smash-card-clickable" Elevation="2" @onclick="ViewSessions">
+                    <MudCardContent>
+                        <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Center">
+                            <MudAvatar Size="Size.Large" Color="Color.Secondary" Variant="Variant.Filled">
+                                <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" />
+                            </MudAvatar>
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.h6" Style="font-weight: 600;">Sessions</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">View and create sessions</MudText>
+                            </MudStack>
+                            <MudSpacer />
+                            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Secondary" />
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+
+        <MudPaper Class="pa-4" Elevation="1" Style="border-radius: var(--radius-lg);">
+            <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-2">Club Details</MudText>
+            <MudStack Row="true" Spacing="4">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
+                    <MudText Typo="Typo.body1">@_club.CreatedAt.ToShortDateString()</MudText>
+                </MudStack>
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Game Type</MudText>
+                    <MudText Typo="Typo.body1">@_club.GameType</MudText>
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    </MudStack>
 }
 
 @code {

@@ -1,10 +1,49 @@
 @page "/"
+@using MudBlazor
 
-<PageTitle>Home</PageTitle>
+<PageTitle>SmashScheduler</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">SmashScheduler</MudText>
-<MudText Typo="Typo.body1" GutterBottom="true">Badminton session management and matchmaking</MudText>
+<div class="hero-section">
+    <MudIcon Icon="@Icons.Material.Filled.SportsTennis" Class="hero-icon" />
+    <MudText Typo="Typo.h3" Class="hero-title">SmashScheduler</MudText>
+    <MudText Typo="Typo.body1" Class="hero-subtitle">
+        Effortless badminton session management and skill-balanced matchmaking
+    </MudText>
+    <MudButton Href="/clubs"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
+               Size="Size.Large"
+               StartIcon="@Icons.Material.Filled.ArrowForward">
+        Get Started
+    </MudButton>
+</div>
 
-<MudButton Href="/clubs" Variant="Variant.Filled" Color="Color.Primary" Class="mt-4">
-    View Clubs
-</MudButton>
+<MudGrid Spacing="3">
+    <MudItem xs="12" sm="4">
+        <MudPaper Class="stat-card" Elevation="2">
+            <MudIcon Icon="@Icons.Material.Filled.Groups" Size="Size.Large" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Class="mt-2">Manage Players</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Track skill levels and availability
+            </MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Class="stat-card" Elevation="2">
+            <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Size="Size.Large" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Class="mt-2">Smart Matchmaking</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Balanced teams based on skill
+            </MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudPaper Class="stat-card" Elevation="2">
+            <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Large" Color="Color.Primary" />
+            <MudText Typo="Typo.h6" Class="mt-2">Track Sessions</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                From draft to completion
+            </MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>

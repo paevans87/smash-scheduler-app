@@ -1,17 +1,22 @@
+@using SmashScheduler.Web.Themes
 @inherits LayoutComponentBase
 
-<MudThemeProvider />
+<MudThemeProvider Theme="SmashSchedulerTheme.Theme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
-        <MudText Typo="Typo.h6">SmashScheduler</MudText>
+    <MudAppBar Elevation="0" Class="smash-app-bar">
+        <MudIconButton Icon="@Icons.Material.Filled.SportsTennis"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       Href="/" />
+        <MudText Typo="Typo.h6" Class="ml-2">SmashScheduler</MudText>
         <MudSpacer />
     </MudAppBar>
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudMainContent Class="pa-4 pa-md-6">
+        <MudContainer MaxWidth="MaxWidth.Large">
             @Body
         </MudContainer>
     </MudMainContent>

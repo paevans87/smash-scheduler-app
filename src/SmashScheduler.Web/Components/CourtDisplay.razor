@@ -3,7 +3,7 @@
 @using SmashScheduler.Domain.Enums
 @using SmashScheduler.Web.Components
 
-<MudGrid>
+<MudGrid Spacing="3">
     @for (var courtNum = 1; courtNum <= CourtCount; courtNum++)
     {
         var match = GetMatchForCourt(courtNum);
@@ -17,14 +17,18 @@
             }
             else
             {
-                <MudCard Elevation="1" Class="empty-court">
-                    <MudCardContent>
-                        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 150px;">
-                            <MudText Typo="Typo.h6" Color="Color.Secondary">Court @courtNum</MudText>
-                            <MudText Typo="Typo.body2" Color="Color.Secondary">Available</MudText>
-                        </MudStack>
-                    </MudCardContent>
-                </MudCard>
+                <MudPaper Class="empty-court" Elevation="0">
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 200px;">
+                        <div class="empty-court__icon">
+                            <MudIcon Icon="@Icons.Material.Outlined.SportsTennis" Size="Size.Large" Color="Color.Secondary" />
+                        </div>
+                        <MudText Typo="Typo.h6" Color="Color.Secondary" Style="font-weight: 600;">Court @courtNum</MudText>
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Outlined">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" />
+                            Available
+                        </MudChip>
+                    </MudStack>
+                </MudPaper>
             }
         </MudItem>
     }

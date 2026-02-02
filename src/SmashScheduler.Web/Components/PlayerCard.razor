@@ -2,34 +2,38 @@
 @using SmashScheduler.Domain.Entities
 @using SmashScheduler.Web.Components
 
-<MudCard Class="pa-2" Elevation="1">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudAvatar Size="Size.Small" Color="Color.Primary">@Player.Name[0]</MudAvatar>
-            <MudText Typo="Typo.body1">@Player.Name</MudText>
-            <SkillLevelBadge SkillLevel="@Player.SkillLevel" />
+<MudPaper Class="player-card" Elevation="1">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width: 100%;">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+            <MudAvatar Size="Size.Medium" Color="Color.Primary" Variant="Variant.Filled">
+                @Player.Name[0]
+            </MudAvatar>
+            <MudText Typo="Typo.body1" Style="font-weight: 500;">@Player.Name</MudText>
         </MudStack>
-        @if (ShowActions)
-        {
-            <MudStack Row="true" Spacing="1">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <SkillLevelBadge SkillLevel="@Player.SkillLevel" />
+            @if (ShowActions)
+            {
                 @if (OnAdd.HasDelegate)
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.Add"
-                                   Size="Size.Small"
+                                   Size="Size.Medium"
                                    Color="Color.Success"
+                                   Variant="Variant.Filled"
                                    OnClick="@(() => OnAdd.InvokeAsync(Player))" />
                 }
                 @if (OnRemove.HasDelegate)
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.Remove"
-                                   Size="Size.Small"
+                                   Size="Size.Medium"
                                    Color="Color.Error"
+                                   Variant="Variant.Filled"
                                    OnClick="@(() => OnRemove.InvokeAsync(Player))" />
                 }
-            </MudStack>
-        }
+            }
+        </MudStack>
     </MudStack>
-</MudCard>
+</MudPaper>
 
 @code {
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;

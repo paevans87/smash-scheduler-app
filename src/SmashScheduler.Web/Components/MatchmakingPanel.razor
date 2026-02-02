@@ -2,7 +2,7 @@
 @using SmashScheduler.Domain.Entities
 @using SmashScheduler.Web.Components
 
-<MudStack Spacing="3">
+<MudStack Spacing="4">
     <CourtDisplay Matches="@ActiveMatches"
                   CourtCount="@Session.CourtCount"
                   PlayerLookup="@PlayerLookup"
@@ -14,12 +14,13 @@
 
 @if (CanGenerateMatches)
 {
-    <MudFab Color="Color.Primary"
+    <MudFab Class="@GetFabClass()"
             StartIcon="@(IsGenerating ? Icons.Material.Filled.Sync : Icons.Material.Filled.AutoAwesome)"
             Label="@(IsGenerating ? "Generating..." : "Generate Matches")"
             OnClick="HandleGenerateMatches"
             Disabled="@IsGenerating"
-            Style="position: fixed; bottom: 16px; right: 16px;" />
+            Size="Size.Large"
+            Style="position: fixed; bottom: 24px; right: 24px; z-index: 1000;" />
 }
 
 @code {
@@ -31,6 +32,11 @@
     [Parameter] public bool CanGenerateMatches { get; set; }
 
     private bool IsGenerating { get; set; }
+
+    private string GetFabClass()
+    {
+        return IsGenerating ? "smash-fab smash-fab--loading" : "smash-fab";
+    }
 
     private IEnumerable<Player> GetBenchedPlayers()
     {

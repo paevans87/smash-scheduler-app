@@ -1,17 +1,25 @@
 @using MudBlazor
 @using SmashScheduler.Domain.Enums
 
-<MudChip T="string" Color="@GetColour()" Size="@Size">@State</MudChip>
+<MudChip T="string" Color="@GetColour()" Size="@Size" Class="session-badge">@GetLabel()</MudChip>
 
 @code {
     [Parameter] public SessionState State { get; set; }
     [Parameter] public Size Size { get; set; } = Size.Small;
 
+    private string GetLabel() => State switch
+    {
+        SessionState.Draft => "Draft",
+        SessionState.Active => "Live",
+        SessionState.Complete => "Complete",
+        _ => "Unknown"
+    };
+
     private Color GetColour() => State switch
     {
-        SessionState.Draft => Color.Default,
+        SessionState.Draft => Color.Warning,
         SessionState.Active => Color.Success,
-        SessionState.Complete => Color.Info,
+        SessionState.Complete => Color.Default,
         _ => Color.Default
     };
 }

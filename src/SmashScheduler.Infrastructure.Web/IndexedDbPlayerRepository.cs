@@ -64,11 +64,13 @@ public class IndexedDbPlayerRepository(SmashSchedulerDb database) : IPlayerRepos
     {
         await database.OpenAsync();
         var allBlacklists = await database.PlayerBlacklists.GetAllAsync<PlayerBlacklist>();
-        var toRemove = allBlacklists?.FirstOrDefault(b => b.PlayerId == playerId && b.BlacklistedPlayerId == blacklistedPlayerId);
+        var toRemove = allBlacklists?.Where(b => b.PlayerId == playerId && b.BlacklistedPlayerId == blacklistedPlayerId).ToList();
         if (toRemove != null)
         {
-            var key = $"{toRemove.PlayerId}-{toRemove.BlacklistedPlayerId}";
-            await database.PlayerBlacklists.DeleteAsync<string>(key);
+            foreach (var blacklist in toRemove)
+            {
+                await database.PlayerBlacklists.DeleteAsync<string>(blacklist.Id);
+            }
         }
     }
 }

@@ -4,6 +4,8 @@ namespace SmashScheduler.Domain.Entities;
 
 public class PlayerBlacklist
 {
+    public string Id => $"{PlayerId}-{BlacklistedPlayerId}-{(int)BlacklistType}";
+
     public Guid PlayerId { get; set; }
 
     public Guid BlacklistedPlayerId { get; set; }

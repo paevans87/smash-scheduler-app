@@ -568,3 +568,20 @@ code {
 .empty-court--clickable:active {
     transform: scale(0.98);
 }
+
+.smash-main-content {
+    padding: calc(64px + var(--spacing-md)) var(--spacing-md) var(--spacing-md);
+}
+
+@media (min-width: 960px) {
+    .smash-main-content {
+        padding: calc(64px + var(--spacing-lg)) var(--spacing-lg) var(--spacing-lg);
+    }
+}
+
+.smash-fab-fixed {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    z-index: 1000;
+}

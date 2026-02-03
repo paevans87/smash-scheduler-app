@@ -17,13 +17,12 @@
 
 @if (CanGenerateMatches)
 {
-    <MudFab Class="@GetFabClass()"
+    <MudFab Class="@($"{GetFabClass()} smash-fab-fixed")"
             StartIcon="@(IsGenerating ? Icons.Material.Filled.Sync : Icons.Material.Filled.AutoAwesome)"
             Label="@(IsGenerating ? "Generating..." : "Generate Matches")"
             OnClick="HandleGenerateMatches"
             Disabled="@IsGenerating"
-            Size="Size.Large"
-            Style="position: fixed; bottom: 24px; right: 24px; z-index: 1000;" />
+            Size="Size.Large" />
 }
 
 @code {

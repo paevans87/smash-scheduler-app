@@ -50,11 +50,10 @@ else
         <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-4">No sessions found.</MudText>
     }
 
-    <MudFab Color="Color.Primary"
+    <MudFab Class="smash-fab smash-fab-fixed"
             StartIcon="@Icons.Material.Filled.Add"
             Label="New Session"
-            OnClick="CreateSession"
-            Style="position: fixed; bottom: 16px; right: 16px;" />
+            OnClick="CreateSession" />
 }
 
 @code {

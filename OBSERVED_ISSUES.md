@@ -1,13 +1,10 @@
-Add player dialog:
-1. ~~User has to click away from player name before add player becomes clickable. Fix by using on text changed events instead.~~ FIXED - Added Immediate="true" to text field
-2. ~~Play style preference - open should be default~~ FIXED - Changed default to Open
-3. ~~Gender - only male & female, there should be no other option.~~ FIXED - UI now only shows Male/Female options
+Next up: 
 
-Navigation:
-~~There is no easy way to go back from player management. We should use breadcrumbs and provide easy navigation to and from different areas of the site (Site wide)~~ FIXED - Breadcrumbs added site-wide
+1. Score weighting should be able to be set at the club level when creating a new club.Each strategy has a number picker that must add up to 100%.
 
-Add Session:
-~~datetime picker is rendering the same width as the input, meaning it doesn't show correctly. Same for time~~ FIXED - Changed to PickerVariant.Dialog for proper display
+2. The club should also have a setting to set if the blacklist is "preferred" or a "hard limit. This should respected in the matching algorithm too.
 
-Active Session:
-~~BROKEN: When a match is put on a court, the component should be updated to show who is on the court, rather than keeping it as "still available". This now means there is no way to actively end a match.~~ FIXED - Moved match creation logic into parent component with confirmation dialog, ensuring proper UI re-render after data changes. Auto-generated matches now show confirmation dialog allowing user to modify suggested players.
+
+3. When a match has been generated and the user is choosing to accept / change it. The user should be able to remove people and then re-run the matching algorithm (obviously not selecting. the same people who were removed.)
+
+4. The user should be able to select a 'draft' match that has been requested so they can put these people on when available. 

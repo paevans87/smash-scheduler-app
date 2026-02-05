@@ -79,4 +79,42 @@ public class PlayerService(
     {
         await playerRepository.RemoveFromBlacklistAsync(playerId, blacklistedPlayerId);
     }
+
+    public async Task SeedTestPlayersAsync(Guid clubId, int count = 26)
+    {
+        var random = new Random();
+
+        var maleNames = new[]
+        {
+            "James", "Oliver", "William", "Henry", "George", "Charlie", "Thomas", "Jack",
+            "Harry", "Oscar", "Leo", "Archie", "Joshua", "Max", "Ethan", "Lucas",
+            "Jacob", "Alexander", "Daniel", "Sebastian", "Adam", "Edward", "Samuel", "Joseph",
+            "David", "Benjamin", "Noah", "Liam"
+        };
+
+        var femaleNames = new[]
+        {
+            "Olivia", "Emma", "Charlotte", "Amelia", "Isla", "Ava", "Mia", "Grace",
+            "Freya", "Emily", "Sophia", "Lily", "Isabella", "Evie", "Poppy", "Ella",
+            "Sophie", "Jessica", "Alice", "Florence", "Daisy", "Matilda", "Rosie", "Eva",
+            "Lucy", "Hannah", "Chloe", "Ruby"
+        };
+
+        var playStyles = Enum.GetValues<PlayStylePreference>();
+        var maleIndex = 0;
+        var femaleIndex = 0;
+
+        for (var i = 0; i < count; i++)
+        {
+            var gender = random.Next(2) == 0 ? Gender.Male : Gender.Female;
+            var name = gender == Gender.Male
+                ? maleNames[maleIndex++ % maleNames.Length]
+                : femaleNames[femaleIndex++ % femaleNames.Length];
+
+            var skillLevel = random.Next(1, 11);
+            var playStyle = playStyles[random.Next(playStyles.Length)];
+
+            await CreatePlayerAsync(clubId, name, skillLevel, gender, playStyle);
+        }
+    }
 }

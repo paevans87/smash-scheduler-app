@@ -13,4 +13,5 @@ public interface IPlayerService
     Task<List<PlayerBlacklist>> GetBlacklistsAsync(Guid playerId);
     Task AddToBlacklistAsync(Guid playerId, Guid blacklistedPlayerId, BlacklistType blacklistType);
     Task RemoveFromBlacklistAsync(Guid playerId, Guid blacklistedPlayerId, BlacklistType blacklistType);
+    Task SeedTestPlayersAsync(Guid clubId, int count = 26);
 }

@@ -1,8 +1,10 @@
 @using MudBlazor
 @using SmashScheduler.Application.Services.ClubManagement
+@using SmashScheduler.Application.Services.PlayerManagement
 @using SmashScheduler.Domain.Entities
 @using SmashScheduler.Domain.Enums
 @inject IClubService ClubService
+@inject IPlayerService PlayerService
 
 <MudDialog>
     <TitleContent>
@@ -43,6 +45,14 @@
                     <MudSelectItem Value="@type">@type</MudSelectItem>
                 }
             </MudSelect>
+
+            @if (!IsEditMode)
+            {
+                <MudCheckBox @bind-Value="_seedTestData"
+                             Label="Seed club with test data (26 players)"
+                             Color="Color.Primary"
+                             Disabled="_isSubmitting" />
+            }
         </MudStack>
     </DialogContent>
     <DialogActions>
@@ -67,6 +77,7 @@
     private string _name = string.Empty;
     private int _courtCount = 4;
     private GameType _gameType = GameType.Doubles;
+    private bool _seedTestData;
     private string? _errorMessage;
     private bool _isSubmitting;
 
@@ -105,6 +116,12 @@
             else
             {
                 var club = await ClubService.CreateClubAsync(_name, _courtCount, _gameType);
+
+                if (_seedTestData)
+                {
+                    await PlayerService.SeedTestPlayersAsync(club.Id);
+                }
+
                 MudDialog.Close(DialogResult.Ok(club));
             }
         }

@@ -150,6 +150,7 @@ else
             }
 
             await LoadData();
+            StateHasChanged();
         }
     }
 
@@ -220,6 +221,7 @@ else
             var (score, winners) = ((MatchScore?, List<Guid>?))result.Data!;
             await MatchService.CompleteMatchAsync(matchId, winners, score);
             await LoadData();
+            StateHasChanged();
         }
     }
 
@@ -227,12 +229,14 @@ else
     {
         await MatchService.UpdateMatchPlayersAsync(update.MatchId, update.PlayerIds);
         await LoadData();
+        StateHasChanged();
     }
 
     private async Task CreateMatch((int CourtNumber, List<Guid> PlayerIds) create)
     {
         await MatchService.CreateMatchAsync(SessionId, create.CourtNumber, create.PlayerIds, false);
         await LoadData();
+        StateHasChanged();
     }
 
     private async Task AutoGenerateSingleMatch(int courtNumber)
@@ -242,6 +246,7 @@ else
         {
             await MatchService.CreateMatchAsync(SessionId, candidate.CourtNumber, candidate.PlayerIds, true);
             await LoadData();
+            StateHasChanged();
         }
     }
 

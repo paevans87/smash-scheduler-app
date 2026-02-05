@@ -23,6 +23,7 @@
                           Variant="Variant.Outlined"
                           Required="true"
                           RequiredError="Player name is required"
+                          Immediate="true"
                           Disabled="_isSubmitting" />
 
             <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
@@ -36,10 +37,8 @@
                        Label="Gender"
                        Variant="Variant.Outlined"
                        Disabled="_isSubmitting">
-                @foreach (Gender gender in Enum.GetValues<Gender>())
-                {
-                    <MudSelectItem Value="@gender">@gender</MudSelectItem>
-                }
+                <MudSelectItem Value="Gender.Male">Male</MudSelectItem>
+                <MudSelectItem Value="Gender.Female">Female</MudSelectItem>
             </MudSelect>
 
             <MudSelect T="PlayStylePreference"
@@ -77,7 +76,7 @@
     private string _name = string.Empty;
     private int _skillLevel = 5;
     private Gender _gender = Gender.Male;
-    private PlayStylePreference _playStylePreference = PlayStylePreference.Mixed;
+    private PlayStylePreference _playStylePreference = PlayStylePreference.Open;
     private string? _errorMessage;
     private bool _isSubmitting;
 

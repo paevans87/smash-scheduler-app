@@ -1,26 +1,108 @@
-# SmashScheduler - Blazor WebAssembly
+# SmashScheduler
 
-A badminton session management and matchmaking application built with Blazor WebAssembly.
+A badminton session management and automated matchmaking application built with Blazor WebAssembly. SmashScheduler removes the manual matchmaking burden from club organisers by creating fair, skill-balanced matches whilst respecting player preferences and social dynamics.
 
-## Architecture
+## Current Functionality
 
-This project follows Clean Architecture principles with the following layers:
+### Club Management
 
-- **Domain** - Core business entities and enums
-- **Application** - Business logic and services  
-- **Infrastructure.Web** - Browser-based data persistence (in-memory stubs, ready for IndexedDB)
-- **Web** - Blazor WebAssembly UI with MudBlazor components
-- **Shared** - Common utilities and constants
+- **Create clubs** with name, default court count, and game type (Singles/Doubles)
+- **View and edit** club details
+- **Delete clubs** and all associated data
 
-## Features Implemented
+### Player Management
 
-✅ Multi-project solution structure
-✅ Clean separation of concerns
-✅ Club management (create, list, view details)
-✅ Player management (create, list by club)
-✅ Navigation flow between features
-✅ MudBlazor Material Design UI
-✅ Responsive layout
+- **Manage player roster** with name, skill level (1-10), gender, and play-style preference
+- **Edit player details** via intuitive dialogs
+- **Player blacklist management** - specify partners or opponents to avoid
+- **Skill level badges** with visual colour coding
+
+### Session Lifecycle
+
+- **Draft mode** - Create sessions, add players from roster, review attendance
+- **Active mode** - Lock roster, run matchmaking, manage matches
+- **Complete mode** - Mark sessions as finished, view read-only history
+
+### Automated Matchmaking
+
+- **Skill-balanced algorithm** considering:
+  - Level-based gameplay (primary weight)
+  - Skill balance across teams
+  - Blacklist avoidance (soft constraint)
+  - Time off court (fairness rotation)
+- **Court capacity enforcement** for Singles (2) and Doubles (4)
+- **Bench calculation** with prioritisation for next round
+
+### Manual Match Management
+
+- **Override automated matches** by replacing individual players
+- **Create manual matches** from scratch
+- **Edit match players** during active sessions
+
+### Match Recording
+
+- **Track match state** (In Progress / Completed)
+- **Record match results** with winning team selection
+- **Clickable team selection** for easy winner recording
+
+### Real-Time Analytics
+
+- **Session statistics panel** showing:
+  - Current match count
+  - Players on bench
+  - Games played per player
+
+### Data Persistence
+
+- **IndexedDB storage** for offline-capable local persistence
+- **Auto-save** session state for crash recovery
+- All data stored locally in the browser
+
+### User Interface
+
+- **Material Design 3** via MudBlazor component library
+- **Responsive layout** for desktop and mobile
+- **Error handling** with user-friendly dialogs
+- **Loading states** and progress indicators
+
+## Planned Functionality
+
+### Session Analytics (Post-Session)
+
+- [ ] Total matches played summary
+- [ ] Total game time calculation
+- [ ] Player participation breakdown
+- [ ] Override rate tracking (manual vs automated)
+
+### Historical Analytics
+
+- [ ] Partnership statistics across sessions
+- [ ] Win rate tracking with partners
+- [ ] Player total games played
+- [ ] Average play time per session
+- [ ] Skill level distribution across club
+
+### Progressive Web App
+
+- [ ] Service worker for offline caching
+- [ ] Web app manifest for installation
+- [ ] Installable app experience
+
+### Additional Features
+
+- [ ] Match score recording
+- [ ] Data export capabilities
+
+## Technology Stack
+
+| Component | Technology |
+|-----------|------------|
+| Framework | .NET 10.0, Blazor WebAssembly |
+| UI Library | MudBlazor 8.15 (Material Design 3) |
+| State Management | Fluxor (Redux-like pattern) |
+| Data Persistence | IndexedDB via Blazored.IndexedDB |
+| Architecture | Clean Architecture, Repository Pattern |
+| Language | C# 12 with Primary Constructors |
 
 ## Running the Application
 
@@ -31,41 +113,42 @@ dotnet run
 
 Navigate to `https://localhost:5001` in your browser.
 
-## Development Status
+## Running Tests
 
-**Phase 1-3 Complete** (40% done):
-- Project restructuring ✅
-- Repository pattern with stubs ✅  
-- Basic UI components ✅
-- Navigation ✅
+```bash
+dotnet test
+```
 
-**Remaining Work**:
-- Session management UI
-- Match management and matchmaking algorithm integration
-- Analytics dashboard
-- IndexedDB implementation (replace in-memory stubs)
-- Fluxor state management
-- PWA configuration
-- Testing infrastructure
-- Deployment pipeline
+The test suite includes:
+- **38 unit tests** for matchmaking and business logic
+- **64 component tests** for UI behaviour (bUnit)
 
-## Technology Stack
+## Project Structure
 
-- .NET 10.0
-- Blazor WebAssembly
-- MudBlazor 8.15
-- Clean Architecture
-- Repository Pattern
-- Primary Constructors (C# 12)
+```
+SmashScheduler/
+├── src/
+│   ├── SmashScheduler.Domain/        # Core entities and enums
+│   ├── SmashScheduler.Application/   # Business logic and services
+│   ├── SmashScheduler.Infrastructure.Web/  # IndexedDB repositories
+│   ├── SmashScheduler.Web/           # Blazor WASM UI
+│   └── SmashScheduler.Shared/        # Common utilities
+├── tests/
+│   ├── SmashScheduler.Tests/         # Unit tests
+│   └── SmashScheduler.Web.Tests/     # Component tests
+└── specs/
+    ├── features.md                   # Feature specification
+    ├── architecture.md               # Technical architecture
+    └── design_system.md              # UI design guidelines
+```
 
 ## Coding Standards
 
-- UK English spelling exclusively
-- No code comments (self-documenting code)
-- Primary constructors preferred
-- One class per file
-- SOLID principles
+- **UK English** spelling exclusively (organiser, colour, centre)
+- **No code comments** - self-documenting code with SOLID principles
+- **Primary constructors** preferred for dependency injection
+- **One class per file** for maintainability
 
-## License
+## Licence
 
 TBD

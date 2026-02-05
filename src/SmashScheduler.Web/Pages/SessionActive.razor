@@ -174,7 +174,7 @@ else
             CloseOnEscapeKey = true
         };
 
-        var dialog = await DialogService.ShowAsync<MatchResultDialog>("Complete Match", parameters, options);
+        var dialog = await DialogService.ShowAsync<MatchResultDialog>("Save Match", parameters, options);
         var result = await dialog.Result;
 
         if (result is { Canceled: false })

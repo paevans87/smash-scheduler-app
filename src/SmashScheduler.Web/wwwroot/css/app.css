@@ -42,8 +42,14 @@
     --transition-slow: 400ms ease;
 }
 
-html {
-    background-color: var(--smash-background);
+html, body {
+    height: 100%;
+    margin: 0;
+    background-color: var(--mud-palette-background);
+}
+
+#app {
+    min-height: 100%;
 }
 
 .smash-app-bar {
@@ -570,6 +576,10 @@ code {
 
 .empty-court--clickable:active {
     transform: scale(0.98);
+}
+
+.mud-layout {
+    min-height: 100vh;
 }
 
 .smash-main-content {

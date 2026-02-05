@@ -17,9 +17,21 @@ public class Match
 
     public bool WasAutomated { get; set; }
 
-    public DateTime StartedAt { get; set; }
+    public long StartedAtTicks { get; set; }
 
-    public DateTime? CompletedAt { get; set; }
+    public long? CompletedAtTicks { get; set; }
+
+    public DateTime StartedAt
+    {
+        get => new DateTime(StartedAtTicks, DateTimeKind.Utc);
+        set => StartedAtTicks = value.Ticks;
+    }
+
+    public DateTime? CompletedAt
+    {
+        get => CompletedAtTicks.HasValue ? new DateTime(CompletedAtTicks.Value, DateTimeKind.Utc) : null;
+        set => CompletedAtTicks = value?.Ticks;
+    }
 
     public string? ScoreJson { get; set; }
 

@@ -33,19 +33,19 @@ else
                            DateFormat="dd MMM yyyy"
                            Variant="Variant.Outlined"
                            PickerVariant="PickerVariant.Dialog"
-                           Style="max-width: 160px;" />
+                           Style="min-width: 180px;" />
             <MudTimePicker Label="Time"
                            @bind-Time="_selectedTime"
                            Variant="Variant.Outlined"
                            PickerVariant="PickerVariant.Dialog"
-                           Style="max-width: 120px;" />
+                           Style="min-width: 140px;" />
             <MudNumericField T="int"
                              Label="Courts"
                              @bind-Value="_session.CourtCount"
                              Min="1"
                              Max="10"
                              Variant="Variant.Outlined"
-                             Style="max-width: 120px;" />
+                             Style="min-width: 100px;" />
             <MudText Typo="Typo.body1">
                 <b>@GetSessionPlayerCount()</b> players in session
             </MudText>

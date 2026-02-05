@@ -2,7 +2,6 @@
 @using SmashScheduler.Domain.Entities
 @using SmashScheduler.Web.Components
 @inject IDialogService DialogService
-@inject ISnackbar Snackbar
 
 <MudStack Spacing="4">
     <CourtDisplay Matches="@ActiveMatches"
@@ -11,8 +10,7 @@
                   PlayerLookup="@PlayerLookup"
                   IsReadOnly="false"
                   OnMatchComplete="@OnMatchComplete"
-                  OnMatchEdit="@HandleEditMatch"
-                  OnCreateMatch="@HandleCreateMatch" />
+                  OnMatchEdit="@HandleEditMatch" />
 
     <BenchDisplay BenchedPlayers="@GetBenchedPlayers()" GamesPlayedLookup="@GamesPlayedLookup" />
 </MudStack>
@@ -34,8 +32,6 @@
     [Parameter] public EventCallback OnGenerateMatches { get; set; }
     [Parameter] public EventCallback<Guid> OnMatchComplete { get; set; }
     [Parameter] public EventCallback<(Guid MatchId, List<Guid> PlayerIds)> OnMatchPlayersUpdate { get; set; }
-    [Parameter] public EventCallback<(int CourtNumber, List<Guid> PlayerIds)> OnMatchCreate { get; set; }
-    [Parameter] public EventCallback<int> OnAutoGenerateSingleMatch { get; set; }
     [Parameter] public bool CanGenerateMatches { get; set; }
     [Parameter] public Dictionary<Guid, int> GamesPlayedLookup { get; set; } = new();
 
@@ -105,53 +101,6 @@
         {
             await OnMatchPlayersUpdate.InvokeAsync((matchId, newPlayerIds));
             StateHasChanged();
-        }
-    }
-
-    private async Task HandleCreateMatch(int courtNumber)
-    {
-        var benchPlayerIds = GetBenchedPlayers().Select(p => p.Id).ToList();
-
-        if (benchPlayerIds.Count < 4)
-        {
-            Snackbar.Add("Not enough players on bench (need at least 4)", Severity.Warning);
-            return;
-        }
-
-        if (OnAutoGenerateSingleMatch.HasDelegate)
-        {
-            await OnAutoGenerateSingleMatch.InvokeAsync(courtNumber);
-            StateHasChanged();
-        }
-        else
-        {
-            await ShowManualMatchDialog(courtNumber, benchPlayerIds);
-            StateHasChanged();
-        }
-    }
-
-    private async Task ShowManualMatchDialog(int courtNumber, List<Guid> benchPlayerIds)
-    {
-        var parameters = new DialogParameters<ManualMatchDialog>
-        {
-            { x => x.CourtNumber, courtNumber },
-            { x => x.PlayerLookup, PlayerLookup },
-            { x => x.BenchPlayerIds, benchPlayerIds }
-        };
-
-        var options = new DialogOptions
-        {
-            CloseOnEscapeKey = true,
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true
-        };
-
-        var dialog = await DialogService.ShowAsync<ManualMatchDialog>("Create Manual Match", parameters, options);
-        var result = await dialog.Result;
-
-        if (result is { Canceled: false, Data: (int confirmedCourtNumber, List<Guid> playerIds) })
-        {
-            await OnMatchCreate.InvokeAsync((confirmedCourtNumber, playerIds));
         }
     }
 }

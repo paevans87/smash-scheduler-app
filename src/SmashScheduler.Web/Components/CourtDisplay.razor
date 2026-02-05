@@ -20,8 +20,7 @@
             }
             else
             {
-                var court = courtNum;
-                <MudPaper Class="@GetEmptyCourtClass()" Elevation="0" @onclick="@(() => HandleEmptyCourtClick(court))">
+                <MudPaper Class="empty-court" Elevation="0">
                     <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="min-height: 200px;">
                         <div class="empty-court__icon">
                             <MudIcon Icon="@Icons.Material.Outlined.SportsTennis" Size="Size.Large" Color="Color.Secondary" />
@@ -31,12 +30,6 @@
                             <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" />
                             Available
                         </MudChip>
-                        @if (!IsReadOnly)
-                        {
-                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
-                                Tap to create match
-                            </MudText>
-                        }
                     </MudStack>
                 </MudPaper>
             }
@@ -52,7 +45,6 @@
     [Parameter] public bool IsReadOnly { get; set; }
     [Parameter] public EventCallback<Guid> OnMatchComplete { get; set; }
     [Parameter] public EventCallback<Guid> OnMatchEdit { get; set; }
-    [Parameter] public EventCallback<int> OnCreateMatch { get; set; }
 
     private Match? GetMatchForCourt(int courtNumber)
     {
@@ -64,18 +56,5 @@
         return CourtLabels.TryGetValue(courtNumber, out var label) && !string.IsNullOrWhiteSpace(label)
             ? label
             : $"Court {courtNumber}";
-    }
-
-    private string GetEmptyCourtClass()
-    {
-        return IsReadOnly ? "empty-court" : "empty-court empty-court--clickable";
-    }
-
-    private async Task HandleEmptyCourtClick(int courtNumber)
-    {
-        if (!IsReadOnly && OnCreateMatch.HasDelegate)
-        {
-            await OnCreateMatch.InvokeAsync(courtNumber);
-        }
     }
 }

@@ -53,9 +53,7 @@ else
                       CanGenerateMatches="@CanGenerateMatches()"
                       OnGenerateMatches="GenerateMatches"
                       OnMatchComplete="CompleteMatch"
-                      OnMatchPlayersUpdate="UpdateMatchPlayers"
-                      OnMatchCreate="CreateMatch"
-                      OnAutoGenerateSingleMatch="AutoGenerateSingleMatch" />
+                      OnMatchPlayersUpdate="UpdateMatchPlayers" />
 }
 
 @code {
@@ -230,62 +228,6 @@ else
         await MatchService.UpdateMatchPlayersAsync(update.MatchId, update.PlayerIds);
         await LoadData();
         StateHasChanged();
-    }
-
-    private async Task CreateMatch((int CourtNumber, List<Guid> PlayerIds) create)
-    {
-        await MatchService.CreateMatchAsync(SessionId, create.CourtNumber, create.PlayerIds, false);
-        await LoadData();
-        StateHasChanged();
-    }
-
-    private async Task AutoGenerateSingleMatch(int courtNumber)
-    {
-        var candidate = await MatchmakingService.GenerateSingleMatchAsync(SessionId, courtNumber);
-
-        var benchPlayerIds = GetBenchedPlayerIds();
-        var suggestedPlayerIds = candidate?.PlayerIds ?? new List<Guid>();
-
-        var parameters = new DialogParameters<ManualMatchDialog>
-        {
-            { x => x.CourtNumber, courtNumber },
-            { x => x.PlayerLookup, _playerLookup },
-            { x => x.BenchPlayerIds, benchPlayerIds },
-            { x => x.SuggestedPlayerIds, suggestedPlayerIds }
-        };
-
-        var options = new DialogOptions
-        {
-            CloseOnEscapeKey = true,
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true
-        };
-
-        var dialog = await DialogService.ShowAsync<ManualMatchDialog>(
-            candidate != null ? "Confirm Match" : "Create Match",
-            parameters,
-            options);
-        var result = await dialog.Result;
-
-        if (result is { Canceled: false, Data: (int confirmedCourtNumber, List<Guid> playerIds) })
-        {
-            await MatchService.CreateMatchAsync(SessionId, confirmedCourtNumber, playerIds, candidate != null);
-            await LoadData();
-            StateHasChanged();
-        }
-    }
-
-    private List<Guid> GetBenchedPlayerIds()
-    {
-        if (_session == null) return new List<Guid>();
-        var playingPlayerIds = _activeMatches
-            .Where(m => m.State == MatchState.InProgress)
-            .SelectMany(m => m.PlayerIds)
-            .ToHashSet();
-        return _session.SessionPlayers
-            .Where(sp => sp.IsActive && !playingPlayerIds.Contains(sp.PlayerId))
-            .Select(sp => sp.PlayerId)
-            .ToList();
     }
 
     private Dictionary<Guid, int> GetGamesPlayedLookup()

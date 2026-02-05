@@ -267,9 +267,9 @@ else
             options);
         var result = await dialog.Result;
 
-        if (result is { Canceled: false, Data: List<Guid> playerIds })
+        if (result is { Canceled: false, Data: (int confirmedCourtNumber, List<Guid> playerIds) })
         {
-            await MatchService.CreateMatchAsync(SessionId, courtNumber, playerIds, candidate != null);
+            await MatchService.CreateMatchAsync(SessionId, confirmedCourtNumber, playerIds, candidate != null);
             await LoadData();
             StateHasChanged();
         }

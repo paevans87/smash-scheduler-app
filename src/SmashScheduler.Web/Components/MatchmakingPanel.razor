@@ -146,9 +146,9 @@
         var dialog = await DialogService.ShowAsync<ManualMatchDialog>("Create Manual Match", parameters, options);
         var result = await dialog.Result;
 
-        if (result is { Canceled: false, Data: List<Guid> playerIds })
+        if (result is { Canceled: false, Data: (int confirmedCourtNumber, List<Guid> playerIds) })
         {
-            await OnMatchCreate.InvokeAsync((courtNumber, playerIds));
+            await OnMatchCreate.InvokeAsync((confirmedCourtNumber, playerIds));
         }
     }
 }

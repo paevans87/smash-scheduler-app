@@ -25,7 +25,7 @@ public class SkillBalanceScorerTests
             PlayerIds = players.Select(p => p.Id).ToList()
         };
 
-        var score = _scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = _scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().BeGreaterThan(80);
     }
@@ -39,7 +39,7 @@ public class SkillBalanceScorerTests
             PlayerIds = players.Select(p => p.Id).ToList()
         };
 
-        var score = _scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = _scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().BeLessOrEqualTo(50);
     }
@@ -53,7 +53,7 @@ public class SkillBalanceScorerTests
             PlayerIds = players.Select(p => p.Id).ToList()
         };
 
-        var score = _scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = _scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().Be(100);
     }
@@ -66,7 +66,7 @@ public class SkillBalanceScorerTests
             PlayerIds = new List<Guid>()
         };
 
-        var score = _scorer.CalculateScore(candidate, new List<Player>(), new Dictionary<Guid, DateTime>());
+        var score = _scorer.CalculateScore(candidate, new List<Player>(), new MatchScoringContext());
 
         score.Should().Be(0);
     }

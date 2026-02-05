@@ -7,12 +7,14 @@
     @for (var courtNum = 1; courtNum <= CourtCount; courtNum++)
     {
         var match = GetMatchForCourt(courtNum);
+        var courtLabel = GetCourtLabel(courtNum);
         <MudItem xs="12" sm="6" md="4">
             @if (match != null)
             {
                 <MatchCard Match="@match"
                            PlayerLookup="@PlayerLookup"
                            IsReadOnly="@IsReadOnly"
+                           CourtLabel="@courtLabel"
                            OnComplete="@OnMatchComplete"
                            OnEdit="@OnMatchEdit" />
             }
@@ -24,7 +26,7 @@
                         <div class="empty-court__icon">
                             <MudIcon Icon="@Icons.Material.Outlined.SportsTennis" Size="Size.Large" Color="Color.Secondary" />
                         </div>
-                        <MudText Typo="Typo.h6" Color="Color.Secondary" Style="font-weight: 600;">Court @court</MudText>
+                        <MudText Typo="Typo.h6" Color="Color.Secondary" Style="font-weight: 600;">@courtLabel</MudText>
                         <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Outlined">
                             <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="mr-1" />
                             Available
@@ -45,6 +47,7 @@
 @code {
     [Parameter] public List<Match> Matches { get; set; } = new();
     [Parameter] public int CourtCount { get; set; }
+    [Parameter] public Dictionary<int, string> CourtLabels { get; set; } = new();
     [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
     [Parameter] public bool IsReadOnly { get; set; }
     [Parameter] public EventCallback<Guid> OnMatchComplete { get; set; }
@@ -54,6 +57,13 @@
     private Match? GetMatchForCourt(int courtNumber)
     {
         return Matches.FirstOrDefault(m => m.CourtNumber == courtNumber && m.State == MatchState.InProgress);
+    }
+
+    private string GetCourtLabel(int courtNumber)
+    {
+        return CourtLabels.TryGetValue(courtNumber, out var label) && !string.IsNullOrWhiteSpace(label)
+            ? label
+            : $"Court {courtNumber}";
     }
 
     private string GetEmptyCourtClass()

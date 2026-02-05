@@ -1,9 +1,12 @@
 @page "/clubs/{ClubId:guid}"
 @using MudBlazor
 @using SmashScheduler.Application.Services.ClubManagement
+@using SmashScheduler.Application.Services.SessionManagement
 @using SmashScheduler.Domain.Entities
+@using SmashScheduler.Domain.Enums
 @using SmashScheduler.Web.Components
 @inject IClubService ClubService
+@inject ISessionService SessionService
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
 
@@ -80,17 +83,48 @@ else
         </MudGrid>
 
         <MudPaper Class="pa-4" Elevation="1" Style="border-radius: var(--radius-lg);">
-            <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Class="mb-2">Club Details</MudText>
-            <MudStack Row="true" Spacing="4">
-                <MudStack Spacing="0">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Created</MudText>
-                    <MudText Typo="Typo.body1">@_club.CreatedAt.ToShortDateString()</MudText>
-                </MudStack>
-                <MudStack Spacing="0">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Game Type</MudText>
-                    <MudText Typo="Typo.body1">@_club.GameType</MudText>
-                </MudStack>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Session History</MudText>
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Primary"
+                           Size="Size.Small"
+                           OnClick="ViewSessions">
+                    View All
+                </MudButton>
             </MudStack>
+            @if (_sessions == null)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else if (!_sessions.Any())
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No sessions yet</MudText>
+            }
+            else
+            {
+                <MudTable Items="@_sessions.OrderByDescending(s => s.ScheduledDateTime).Take(5)"
+                          T="Session"
+                          Dense="true"
+                          Hover="true"
+                          Breakpoint="Breakpoint.Sm"
+                          RowClass="cursor-pointer"
+                          OnRowClick="@NavigateToSession">
+                    <HeaderContent>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Time</MudTh>
+                        <MudTh>Players</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Date">@context.ScheduledDateTime.ToString("dd MMM yyyy")</MudTd>
+                        <MudTd DataLabel="Time">@context.ScheduledDateTime.ToString("HH:mm")</MudTd>
+                        <MudTd DataLabel="Players">@context.SessionPlayers.Count</MudTd>
+                        <MudTd DataLabel="Status">
+                            <SessionStateBadge State="@context.State" Size="Size.Small" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
         </MudPaper>
     </MudStack>
 }
@@ -98,10 +132,12 @@ else
 @code {
     [Parameter] public Guid ClubId { get; set; }
     private Club? _club;
+    private List<Session>? _sessions;
 
     protected override async Task OnInitializedAsync()
     {
         _club = await ClubService.GetByIdAsync(ClubId);
+        _sessions = await SessionService.GetByClubIdAsync(ClubId);
     }
 
     private void ViewPlayers()
@@ -117,6 +153,20 @@ else
     private void GoBack()
     {
         Navigation.NavigateTo("/clubs");
+    }
+
+    private void NavigateToSession(TableRowClickEventArgs<Session> args)
+    {
+        var session = args.Item;
+        if (session == null) return;
+        var route = session.State switch
+        {
+            SessionState.Draft => $"/clubs/{ClubId}/sessions/{session.Id}/draft",
+            SessionState.Active => $"/clubs/{ClubId}/sessions/{session.Id}/active",
+            SessionState.Complete => $"/clubs/{ClubId}/sessions/{session.Id}/complete",
+            _ => $"/clubs/{ClubId}/sessions"
+        };
+        Navigation.NavigateTo(route);
     }
 
     private async Task OpenEditDialog()

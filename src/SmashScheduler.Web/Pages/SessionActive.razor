@@ -46,11 +46,13 @@ else
     <MatchmakingPanel Session="@_session"
                       ActiveMatches="@_activeMatches"
                       PlayerLookup="@_playerLookup"
+                      GamesPlayedLookup="@GetGamesPlayedLookup()"
                       CanGenerateMatches="@CanGenerateMatches()"
                       OnGenerateMatches="GenerateMatches"
                       OnMatchComplete="CompleteMatch"
                       OnMatchPlayersUpdate="UpdateMatchPlayers"
-                      OnMatchCreate="CreateMatch" />
+                      OnMatchCreate="CreateMatch"
+                      OnAutoGenerateSingleMatch="AutoGenerateSingleMatch" />
 }
 
 @code {
@@ -107,12 +109,36 @@ else
             candidates = GenerateFallbackMatches();
         }
 
-        foreach (var candidate in candidates)
+        if (!candidates.Any())
         {
-            await MatchService.CreateMatchAsync(SessionId, candidate.CourtNumber, candidate.PlayerIds, true);
+            return;
         }
 
-        await LoadData();
+        var parameters = new DialogParameters<MatchPreviewDialog>
+        {
+            { x => x.ProposedMatches, candidates },
+            { x => x.PlayerLookup, _playerLookup }
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<MatchPreviewDialog>("Confirm Matches", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: List<MatchCandidate> confirmedMatches })
+        {
+            foreach (var candidate in confirmedMatches)
+            {
+                await MatchService.CreateMatchAsync(SessionId, candidate.CourtNumber, candidate.PlayerIds, true);
+            }
+
+            await LoadData();
+        }
     }
 
     private List<MatchCandidate> GenerateFallbackMatches()
@@ -195,6 +221,33 @@ else
     {
         await MatchService.CreateMatchAsync(SessionId, create.CourtNumber, create.PlayerIds, false);
         await LoadData();
+    }
+
+    private async Task AutoGenerateSingleMatch(int courtNumber)
+    {
+        var candidate = await MatchmakingService.GenerateSingleMatchAsync(SessionId, courtNumber);
+        if (candidate != null)
+        {
+            await MatchService.CreateMatchAsync(SessionId, candidate.CourtNumber, candidate.PlayerIds, true);
+            await LoadData();
+        }
+    }
+
+    private Dictionary<Guid, int> GetGamesPlayedLookup()
+    {
+        var lookup = new Dictionary<Guid, int>();
+        var completedMatches = _activeMatches.Where(m => m.State == MatchState.Completed);
+
+        foreach (var match in completedMatches)
+        {
+            foreach (var playerId in match.PlayerIds)
+            {
+                lookup.TryGetValue(playerId, out var count);
+                lookup[playerId] = count + 1;
+            }
+        }
+
+        return lookup;
     }
 
     private async Task EndSession()

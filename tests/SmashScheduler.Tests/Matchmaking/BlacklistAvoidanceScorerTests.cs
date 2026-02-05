@@ -19,7 +19,7 @@ public class BlacklistAvoidanceScorerTests
         };
         var scorer = new BlacklistAvoidanceScorer(new List<PlayerBlacklist>());
 
-        var score = scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().Be(100);
     }
@@ -43,7 +43,7 @@ public class BlacklistAvoidanceScorerTests
         };
         var scorer = new BlacklistAvoidanceScorer(blacklists);
 
-        var score = scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().BeLessThan(100);
         score.Should().BeGreaterThanOrEqualTo(0);
@@ -74,7 +74,7 @@ public class BlacklistAvoidanceScorerTests
         };
         var scorer = new BlacklistAvoidanceScorer(blacklists);
 
-        var score = scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().BeLessThan(80);
     }

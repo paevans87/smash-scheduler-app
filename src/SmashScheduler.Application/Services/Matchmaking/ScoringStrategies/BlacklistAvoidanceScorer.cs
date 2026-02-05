@@ -13,7 +13,7 @@ public class BlacklistAvoidanceScorer : IMatchScorer
         _blacklists = blacklists;
     }
 
-    public double CalculateScore(MatchCandidate candidate, List<Player> allPlayers, Dictionary<Guid, DateTime> lastMatchCompletionTimes)
+    public double CalculateScore(MatchCandidate candidate, List<Player> allPlayers, MatchScoringContext context)
     {
         var playerIds = candidate.PlayerIds;
         var penaltyCount = 0;

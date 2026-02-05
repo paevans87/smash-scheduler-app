@@ -1,5 +1,6 @@
 using SmashScheduler.Application.Interfaces.Repositories;
 using SmashScheduler.Application.Services.Matchmaking.Models;
+using SmashScheduler.Application.Services.Matchmaking.ScoringStrategies;
 using SmashScheduler.Domain.Entities;
 using SmashScheduler.Domain.Enums;
 
@@ -10,6 +11,10 @@ public class MatchmakingService(
     IMatchRepository matchRepository,
     IPlayerRepository playerRepository) : IMatchmakingService
 {
+    private const double SkillBalanceWeight = 0.40;
+    private const double MatchHistoryWeight = 0.35;
+    private const double TimeOffCourtWeight = 0.25;
+
     public async Task<List<MatchCandidate>> GenerateMatchesAsync(Guid sessionId)
     {
         var session = await sessionRepository.GetByIdAsync(sessionId);
@@ -45,10 +50,63 @@ public class MatchmakingService(
             .Where(c => !usedCourts.Contains(c))
             .ToList();
 
-        return GenerateSkillBalancedMatches(benchedPlayers, availableCourts);
+        var completedMatches = existingMatches.Where(m => m.State == MatchState.Completed).ToList();
+        var lastMatchTimes = BuildLastMatchCompletionTimes(completedMatches);
+
+        return GenerateScoredMatches(benchedPlayers, availableCourts, completedMatches, lastMatchTimes);
     }
 
-    private List<MatchCandidate> GenerateSkillBalancedMatches(List<Player> players, List<int> availableCourts)
+    public async Task<MatchCandidate?> GenerateSingleMatchAsync(Guid sessionId, int courtNumber)
+    {
+        var session = await sessionRepository.GetByIdAsync(sessionId);
+        if (session == null) throw new InvalidOperationException("Session not found");
+
+        var existingMatches = await matchRepository.GetBySessionIdAsync(sessionId);
+
+        var playingPlayerIds = existingMatches
+            .Where(m => m.State == MatchState.InProgress)
+            .SelectMany(m => m.PlayerIds)
+            .ToHashSet();
+
+        var benchedSessionPlayers = session.SessionPlayers
+            .Where(sp => sp.IsActive && !playingPlayerIds.Contains(sp.PlayerId))
+            .ToList();
+
+        var benchedPlayers = new List<Player>();
+        foreach (var sp in benchedSessionPlayers)
+        {
+            var player = sp.Player ?? await playerRepository.GetByIdAsync(sp.PlayerId);
+            if (player != null)
+            {
+                benchedPlayers.Add(player);
+            }
+        }
+
+        if (benchedPlayers.Count < 4)
+        {
+            return null;
+        }
+
+        var completedMatches = existingMatches.Where(m => m.State == MatchState.Completed).ToList();
+        var lastMatchTimes = BuildLastMatchCompletionTimes(completedMatches);
+        var context = new MatchScoringContext
+        {
+            CompletedMatches = completedMatches,
+            LastMatchCompletionTimes = lastMatchTimes
+        };
+
+        var bestCandidate = FindBestFoursomeWithScoring(benchedPlayers, context);
+        if (bestCandidate == null) return null;
+
+        bestCandidate.CourtNumber = courtNumber;
+        return bestCandidate;
+    }
+
+    private List<MatchCandidate> GenerateScoredMatches(
+        List<Player> players,
+        List<int> availableCourts,
+        List<Match> completedMatches,
+        Dictionary<Guid, DateTime> lastMatchTimes)
     {
         var candidates = new List<MatchCandidate>();
 
@@ -57,32 +115,26 @@ public class MatchmakingService(
             return candidates;
         }
 
-        var sortedPlayers = players.OrderByDescending(p => p.SkillLevel).ToList();
-        var usedPlayerIds = new HashSet<Guid>();
+        var context = new MatchScoringContext
+        {
+            CompletedMatches = completedMatches,
+            LastMatchCompletionTimes = lastMatchTimes
+        };
+
+        var remainingPlayers = new List<Player>(players);
         var courtIndex = 0;
 
-        while (usedPlayerIds.Count + 4 <= sortedPlayers.Count && courtIndex < availableCourts.Count)
+        while (remainingPlayers.Count >= 4 && courtIndex < availableCourts.Count)
         {
-            var available = sortedPlayers.Where(p => !usedPlayerIds.Contains(p.Id)).ToList();
+            var bestCandidate = FindBestFoursomeWithScoring(remainingPlayers, context);
+            if (bestCandidate == null) break;
 
-            if (available.Count < 4)
-            {
-                break;
-            }
+            bestCandidate.CourtNumber = availableCourts[courtIndex];
+            candidates.Add(bestCandidate);
 
-            var matchPlayers = SelectBalancedFoursome(available);
-
-            candidates.Add(new MatchCandidate
-            {
-                CourtNumber = availableCourts[courtIndex],
-                PlayerIds = matchPlayers.Select(p => p.Id).ToList(),
-                TotalScore = CalculateMatchBalance(matchPlayers)
-            });
-
-            foreach (var player in matchPlayers)
-            {
-                usedPlayerIds.Add(player.Id);
-            }
+            remainingPlayers = remainingPlayers
+                .Where(p => !bestCandidate.PlayerIds.Contains(p.Id))
+                .ToList();
 
             courtIndex++;
         }
@@ -90,38 +142,114 @@ public class MatchmakingService(
         return candidates;
     }
 
-    private List<Player> SelectBalancedFoursome(List<Player> available)
+    private MatchCandidate? FindBestFoursomeWithScoring(List<Player> availablePlayers, MatchScoringContext context)
     {
-        var sorted = available.OrderByDescending(p => p.SkillLevel).ToList();
-
-        if (sorted.Count == 4)
+        if (availablePlayers.Count < 4)
         {
-            return sorted;
+            return null;
         }
 
-        var p1 = sorted[0];
-        var p4 = sorted[sorted.Count - 1];
+        var allCombinations = GenerateFoursomeCombinations(availablePlayers);
+        var skillScorer = new SkillBalanceScorer();
+        var historyScorer = new MatchHistoryScorer();
+        var timeScorer = new TimeOffCourtScorer();
 
-        var remaining = sorted.Skip(1).Take(sorted.Count - 2).ToList();
-        var midIndex = remaining.Count / 2;
-        var p2 = remaining.Count > 0 ? remaining[midIndex] : sorted[1];
-        var p3 = remaining.Count > 1 ? remaining[remaining.Count - 1 - (midIndex > 0 ? 1 : 0)] : sorted[2];
+        MatchCandidate? bestCandidate = null;
+        var bestScore = double.MinValue;
 
-        if (p2 == p3 && remaining.Count > 1)
+        foreach (var combination in allCombinations)
         {
-            p3 = remaining.FirstOrDefault(p => p.Id != p2.Id) ?? sorted[2];
+            var candidate = new MatchCandidate
+            {
+                PlayerIds = combination.Select(p => p.Id).ToList()
+            };
+
+            var skillScore = skillScorer.CalculateScore(candidate, availablePlayers, context);
+            var historyScore = historyScorer.CalculateScore(candidate, availablePlayers, context);
+            var timeScore = timeScorer.CalculateScore(candidate, availablePlayers, context);
+
+            var totalScore = (skillScore * SkillBalanceWeight) +
+                             (historyScore * MatchHistoryWeight) +
+                             (timeScore * TimeOffCourtWeight);
+
+            candidate.TotalScore = totalScore;
+
+            if (totalScore > bestScore)
+            {
+                bestScore = totalScore;
+                bestCandidate = candidate;
+            }
         }
 
-        return new List<Player> { p1, p4, p2, p3 };
+        return bestCandidate;
     }
 
-    private double CalculateMatchBalance(List<Player> players)
+    private List<List<Player>> GenerateFoursomeCombinations(List<Player> players)
     {
-        if (players.Count != 4) return 0;
+        var combinations = new List<List<Player>>();
+        var count = players.Count;
 
-        var team1Skill = players[0].SkillLevel + players[1].SkillLevel;
-        var team2Skill = players[2].SkillLevel + players[3].SkillLevel;
+        if (count > 12)
+        {
+            var sorted = players.OrderByDescending(p => p.SkillLevel).ToList();
+            return GenerateLimitedCombinations(sorted, 100);
+        }
 
-        return 100 - Math.Abs(team1Skill - team2Skill) * 10;
+        for (var i = 0; i < count - 3; i++)
+        {
+            for (var j = i + 1; j < count - 2; j++)
+            {
+                for (var k = j + 1; k < count - 1; k++)
+                {
+                    for (var l = k + 1; l < count; l++)
+                    {
+                        combinations.Add(new List<Player>
+                        {
+                            players[i], players[j], players[k], players[l]
+                        });
+                    }
+                }
+            }
+        }
+
+        return combinations;
+    }
+
+    private List<List<Player>> GenerateLimitedCombinations(List<Player> sortedPlayers, int maxCombinations)
+    {
+        var combinations = new List<List<Player>>();
+        var count = sortedPlayers.Count;
+        var random = new Random();
+
+        for (var attempt = 0; attempt < maxCombinations && combinations.Count < maxCombinations; attempt++)
+        {
+            var indices = Enumerable.Range(0, count).OrderBy(_ => random.Next()).Take(4).OrderBy(x => x).ToList();
+            var combination = indices.Select(idx => sortedPlayers[idx]).ToList();
+
+            var alreadyExists = combinations.Any(c =>
+                c.Select(p => p.Id).OrderBy(id => id).SequenceEqual(combination.Select(p => p.Id).OrderBy(id => id)));
+
+            if (!alreadyExists)
+            {
+                combinations.Add(combination);
+            }
+        }
+
+        return combinations;
+    }
+
+    private Dictionary<Guid, DateTime> BuildLastMatchCompletionTimes(List<Match> completedMatches)
+    {
+        var lastMatchTimes = new Dictionary<Guid, DateTime>();
+
+        foreach (var match in completedMatches.Where(m => m.CompletedAt.HasValue).OrderBy(m => m.CompletedAt))
+        {
+            foreach (var playerId in match.PlayerIds)
+            {
+                lastMatchTimes[playerId] = match.CompletedAt!.Value;
+            }
+        }
+
+        return lastMatchTimes;
     }
 }

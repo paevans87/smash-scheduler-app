@@ -26,7 +26,7 @@
             <MudStack Spacing="2">
                 @foreach (var player in BenchedPlayers)
                 {
-                    <PlayerCard Player="@player" />
+                    <PlayerCard Player="@player" GamesPlayed="@GetGamesPlayed(player.Id)" />
                 }
             </MudStack>
         }
@@ -35,4 +35,8 @@
 
 @code {
     [Parameter] public IEnumerable<Player> BenchedPlayers { get; set; } = Enumerable.Empty<Player>();
+    [Parameter] public Dictionary<Guid, int> GamesPlayedLookup { get; set; } = new();
+
+    private int? GetGamesPlayed(Guid playerId) =>
+        GamesPlayedLookup.TryGetValue(playerId, out var count) ? count : null;
 }

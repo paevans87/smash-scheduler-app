@@ -9,7 +9,7 @@
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                     <MudIcon Icon="@Icons.Material.Filled.SportsScore" Color="Color.Primary" />
-                    <MudText Typo="Typo.h6">Court @Match.CourtNumber</MudText>
+                    <MudText Typo="Typo.h6">@GetDisplayCourtLabel()</MudText>
                     @if (!Match.WasAutomated)
                     {
                         <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined" Class="manual-badge">
@@ -96,9 +96,13 @@
 @code {
     [Parameter, EditorRequired] public Match Match { get; set; } = null!;
     [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
+    [Parameter] public string? CourtLabel { get; set; }
     [Parameter] public bool IsReadOnly { get; set; }
     [Parameter] public EventCallback<Guid> OnComplete { get; set; }
     [Parameter] public EventCallback<Guid> OnEdit { get; set; }
+
+    private string GetDisplayCourtLabel() =>
+        !string.IsNullOrWhiteSpace(CourtLabel) ? CourtLabel : $"Court {Match.CourtNumber}";
 
     private string GetCardClass()
     {

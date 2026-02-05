@@ -1,16 +1,23 @@
 @using MudBlazor
 @using SmashScheduler.Domain.Entities
+@using SmashScheduler.Domain.Enums
 @using SmashScheduler.Web.Components
 
 <MudPaper Class="player-card" Elevation="1">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width: 100%;">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-            <MudAvatar Size="Size.Medium" Color="Color.Primary" Variant="Variant.Filled">
+            <MudAvatar Size="Size.Medium" Variant="Variant.Filled" Style="@GetAvatarStyle()">
                 @Player.Name[0]
             </MudAvatar>
             <MudText Typo="Typo.body1" Style="font-weight: 500;">@Player.Name</MudText>
         </MudStack>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            @if (GamesPlayed.HasValue)
+            {
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Default">
+                    @GamesPlayed games
+                </MudChip>
+            }
             <SkillLevelBadge SkillLevel="@Player.SkillLevel" />
             @if (ShowActions)
             {
@@ -38,6 +45,14 @@
 @code {
     [Parameter, EditorRequired] public Player Player { get; set; } = null!;
     [Parameter] public bool ShowActions { get; set; }
+    [Parameter] public int? GamesPlayed { get; set; }
     [Parameter] public EventCallback<Player> OnAdd { get; set; }
     [Parameter] public EventCallback<Player> OnRemove { get; set; }
+
+    private string GetAvatarStyle() => Player.Gender switch
+    {
+        Gender.Female => "background-color: var(--smash-gender-female);",
+        Gender.Male => "background-color: var(--smash-gender-male);",
+        _ => "background-color: var(--smash-gender-other);"
+    };
 }

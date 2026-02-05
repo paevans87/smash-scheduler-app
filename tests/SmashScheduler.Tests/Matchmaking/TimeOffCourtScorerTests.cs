@@ -25,7 +25,7 @@ public class TimeOffCourtScorerTests
             PlayerIds = players.Select(p => p.Id).ToList()
         };
 
-        var score = _scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = _scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().BeGreaterThan(50);
     }
@@ -46,7 +46,7 @@ public class TimeOffCourtScorerTests
             PlayerIds = players.Select(p => p.Id).ToList()
         };
 
-        var score = _scorer.CalculateScore(candidate, players, lastMatchTimes);
+        var score = _scorer.CalculateScore(candidate, players, new MatchScoringContext { LastMatchCompletionTimes = lastMatchTimes });
 
         score.Should().BeLessThan(50);
     }
@@ -67,7 +67,7 @@ public class TimeOffCourtScorerTests
             PlayerIds = players.Select(p => p.Id).ToList()
         };
 
-        var score = _scorer.CalculateScore(candidate, players, lastMatchTimes);
+        var score = _scorer.CalculateScore(candidate, players, new MatchScoringContext { LastMatchCompletionTimes = lastMatchTimes });
 
         score.Should().BeGreaterThan(80);
     }

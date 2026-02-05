@@ -1,0 +1,104 @@
+@using MudBlazor
+@using SmashScheduler.Application.Services.Matchmaking.Models
+@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Web.Components
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Preview" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Confirm Matches</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="4">
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Review the proposed matches before creating them.
+            </MudText>
+
+            @foreach (var candidate in ProposedMatches)
+            {
+                <MudPaper Class="pa-3" Elevation="2">
+                    <MudStack Spacing="2">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">
+                                Court @candidate.CourtNumber
+                            </MudText>
+                            @if (candidate.TotalScore > 0)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="@GetScoreColour(candidate.TotalScore)" Variant="Variant.Outlined">
+                                    Score: @candidate.TotalScore.ToString("F0")
+                                </MudChip>
+                            }
+                        </MudStack>
+
+                        <MudGrid Spacing="2">
+                            <MudItem xs="5">
+                                <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight: 600;">TEAM 1</MudText>
+                                @foreach (var playerId in candidate.PlayerIds.Take(2))
+                                {
+                                    @if (PlayerLookup.TryGetValue(playerId, out var player))
+                                    {
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-1">
+                                            <MudText Typo="Typo.body2">@player.Name</MudText>
+                                            <SkillLevelBadge SkillLevel="@player.SkillLevel" Size="Size.Small" />
+                                        </MudStack>
+                                    }
+                                }
+                            </MudItem>
+                            <MudItem xs="2" Style="display: flex; align-items: center; justify-content: center;">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">vs</MudText>
+                            </MudItem>
+                            <MudItem xs="5">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">TEAM 2</MudText>
+                                @foreach (var playerId in candidate.PlayerIds.Skip(2).Take(2))
+                                {
+                                    @if (PlayerLookup.TryGetValue(playerId, out var player))
+                                    {
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-1">
+                                            <MudText Typo="Typo.body2">@player.Name</MudText>
+                                            <SkillLevelBadge SkillLevel="@player.SkillLevel" Size="Size.Small" />
+                                        </MudStack>
+                                    }
+                                }
+                            </MudItem>
+                        </MudGrid>
+                    </MudStack>
+                </MudPaper>
+            }
+
+            @if (!ProposedMatches.Any())
+            {
+                <MudAlert Severity="Severity.Info">
+                    No matches could be generated. Check that there are enough players on the bench.
+                </MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton OnClick="Submit"
+                   Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@(!ProposedMatches.Any())">
+            Create @ProposedMatches.Count Match@(ProposedMatches.Count != 1 ? "es" : "")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public List<MatchCandidate> ProposedMatches { get; set; } = new();
+    [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
+
+    private Color GetScoreColour(double score) => score switch
+    {
+        >= 80 => Color.Success,
+        >= 60 => Color.Warning,
+        _ => Color.Error
+    };
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(ProposedMatches));
+}

@@ -5,14 +5,14 @@ namespace SmashScheduler.Application.Services.Matchmaking.ScoringStrategies;
 
 public class TimeOffCourtScorer : IMatchScorer
 {
-    public double CalculateScore(MatchCandidate candidate, List<Player> allPlayers, Dictionary<Guid, DateTime> lastMatchCompletionTimes)
+    public double CalculateScore(MatchCandidate candidate, List<Player> allPlayers, MatchScoringContext context)
     {
         var now = DateTime.UtcNow;
         var totalMinutesOff = 0.0;
 
         foreach (var playerId in candidate.PlayerIds)
         {
-            if (lastMatchCompletionTimes.TryGetValue(playerId, out var lastCompletion))
+            if (context.LastMatchCompletionTimes.TryGetValue(playerId, out var lastCompletion))
             {
                 var minutesOff = (now - lastCompletion).TotalMinutes;
                 totalMinutesOff += minutesOff;

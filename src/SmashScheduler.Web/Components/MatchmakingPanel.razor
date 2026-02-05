@@ -2,17 +2,19 @@
 @using SmashScheduler.Domain.Entities
 @using SmashScheduler.Web.Components
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <MudStack Spacing="4">
     <CourtDisplay Matches="@ActiveMatches"
                   CourtCount="@Session.CourtCount"
+                  CourtLabels="@Session.CourtLabels"
                   PlayerLookup="@PlayerLookup"
                   IsReadOnly="false"
                   OnMatchComplete="@OnMatchComplete"
                   OnMatchEdit="@HandleEditMatch"
                   OnCreateMatch="@HandleCreateMatch" />
 
-    <BenchDisplay BenchedPlayers="@GetBenchedPlayers()" />
+    <BenchDisplay BenchedPlayers="@GetBenchedPlayers()" GamesPlayedLookup="@GamesPlayedLookup" />
 </MudStack>
 
 @if (CanGenerateMatches)
@@ -33,7 +35,9 @@
     [Parameter] public EventCallback<Guid> OnMatchComplete { get; set; }
     [Parameter] public EventCallback<(Guid MatchId, List<Guid> PlayerIds)> OnMatchPlayersUpdate { get; set; }
     [Parameter] public EventCallback<(int CourtNumber, List<Guid> PlayerIds)> OnMatchCreate { get; set; }
+    [Parameter] public EventCallback<int> OnAutoGenerateSingleMatch { get; set; }
     [Parameter] public bool CanGenerateMatches { get; set; }
+    [Parameter] public Dictionary<Guid, int> GamesPlayedLookup { get; set; } = new();
 
     private bool IsGenerating { get; set; }
 
@@ -109,9 +113,24 @@
 
         if (benchPlayerIds.Count < 4)
         {
+            Snackbar.Add("Not enough players on bench (need at least 4)", Severity.Warning);
             return;
         }
 
+        if (OnAutoGenerateSingleMatch.HasDelegate)
+        {
+            await OnAutoGenerateSingleMatch.InvokeAsync(courtNumber);
+            var courtLabel = Session.GetCourtLabel(courtNumber);
+            Snackbar.Add($"Match generated for {courtLabel}", Severity.Success);
+        }
+        else
+        {
+            await ShowManualMatchDialog(courtNumber, benchPlayerIds);
+        }
+    }
+
+    private async Task ShowManualMatchDialog(int courtNumber, List<Guid> benchPlayerIds)
+    {
         var parameters = new DialogParameters<ManualMatchDialog>
         {
             { x => x.CourtNumber, courtNumber },

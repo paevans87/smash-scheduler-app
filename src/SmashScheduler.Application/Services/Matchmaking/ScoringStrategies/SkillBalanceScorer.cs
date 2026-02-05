@@ -5,7 +5,7 @@ namespace SmashScheduler.Application.Services.Matchmaking.ScoringStrategies;
 
 public class SkillBalanceScorer : IMatchScorer
 {
-    public double CalculateScore(MatchCandidate candidate, List<Player> allPlayers, Dictionary<Guid, DateTime> lastMatchCompletionTimes)
+    public double CalculateScore(MatchCandidate candidate, List<Player> allPlayers, MatchScoringContext context)
     {
         var players = allPlayers.Where(p => candidate.PlayerIds.Contains(p.Id)).ToList();
 

@@ -27,7 +27,16 @@ else
     </MudStack>
 
     <MudPaper Class="pa-3 mb-4" Elevation="1">
-        <MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center">
+        <MudStack Row="true" Spacing="4" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+            <MudDatePicker Label="Date"
+                           @bind-Date="_selectedDate"
+                           DateFormat="dd MMM yyyy"
+                           Variant="Variant.Outlined"
+                           Style="max-width: 160px;" />
+            <MudTimePicker Label="Time"
+                           @bind-Time="_selectedTime"
+                           Variant="Variant.Outlined"
+                           Style="max-width: 120px;" />
             <MudNumericField T="int"
                              Label="Courts"
                              @bind-Value="_session.CourtCount"
@@ -39,6 +48,27 @@ else
                 <b>@GetSessionPlayerCount()</b> players in session
             </MudText>
         </MudStack>
+
+        <MudExpansionPanels Class="mt-3" Elevation="0">
+            <MudExpansionPanel Text="Custom Court Names" Dense="true">
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
+                    Optionally set custom names for courts (e.g., "Court 7" instead of "Court 1")
+                </MudText>
+                <MudStack Spacing="2">
+                    @for (var i = 1; i <= _session.CourtCount; i++)
+                    {
+                        var courtNum = i;
+                        <MudTextField T="string"
+                                      Label="@($"Court {courtNum}")"
+                                      Value="@GetCourtLabel(courtNum)"
+                                      ValueChanged="@(value => SetCourtLabel(courtNum, value))"
+                                      Placeholder="@($"Court {courtNum}")"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" />
+                    }
+                </MudStack>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
     </MudPaper>
 
     <MudGrid>
@@ -107,6 +137,32 @@ else
     private Session? _session;
     private List<Player>? _allPlayers;
 
+    private DateTime? _selectedDate
+    {
+        get => _session?.ScheduledDateTime.Date;
+        set
+        {
+            if (_session != null && value.HasValue)
+            {
+                var time = _session.ScheduledDateTime.TimeOfDay;
+                _session.ScheduledDateTime = value.Value.Date + time;
+            }
+        }
+    }
+
+    private TimeSpan? _selectedTime
+    {
+        get => _session?.ScheduledDateTime.TimeOfDay;
+        set
+        {
+            if (_session != null && value.HasValue)
+            {
+                var date = _session.ScheduledDateTime.Date;
+                _session.ScheduledDateTime = date + value.Value;
+            }
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
@@ -154,5 +210,26 @@ else
     private void GoBack()
     {
         Navigation.NavigateTo($"/clubs/{ClubId}/sessions");
+    }
+
+    private string GetCourtLabel(int courtNumber)
+    {
+        if (_session == null) return string.Empty;
+        return _session.CourtLabels.TryGetValue(courtNumber, out var label) ? label : string.Empty;
+    }
+
+    private void SetCourtLabel(int courtNumber, string? value)
+    {
+        if (_session == null) return;
+        var labels = _session.CourtLabels;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            labels.Remove(courtNumber);
+        }
+        else
+        {
+            labels[courtNumber] = value;
+        }
+        _session.CourtLabels = labels;
     }
 }

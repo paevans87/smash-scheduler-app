@@ -25,7 +25,7 @@ public class PlayStylePreferenceScorerTests
             PlayerIds = players.Select(p => p.Id).ToList()
         };
 
-        var score = _scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = _scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().Be(100);
     }
@@ -39,7 +39,7 @@ public class PlayStylePreferenceScorerTests
             PlayerIds = players.Select(p => p.Id).ToList()
         };
 
-        var score = _scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = _scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().Be(90);
     }
@@ -59,7 +59,7 @@ public class PlayStylePreferenceScorerTests
             PlayerIds = players.Select(p => p.Id).ToList()
         };
 
-        var score = _scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = _scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().Be(95);
     }
@@ -73,7 +73,7 @@ public class PlayStylePreferenceScorerTests
             PlayerIds = players.Select(p => p.Id).ToList()
         };
 
-        var score = _scorer.CalculateScore(candidate, players, new Dictionary<Guid, DateTime>());
+        var score = _scorer.CalculateScore(candidate, players, new MatchScoringContext());
 
         score.Should().Be(60);
     }

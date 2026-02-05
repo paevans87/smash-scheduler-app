@@ -104,6 +104,7 @@
         if (result is { Canceled: false, Data: List<Guid> newPlayerIds })
         {
             await OnMatchPlayersUpdate.InvokeAsync((matchId, newPlayerIds));
+            StateHasChanged();
         }
     }
 
@@ -120,10 +121,12 @@
         if (OnAutoGenerateSingleMatch.HasDelegate)
         {
             await OnAutoGenerateSingleMatch.InvokeAsync(courtNumber);
+            StateHasChanged();
         }
         else
         {
             await ShowManualMatchDialog(courtNumber, benchPlayerIds);
+            StateHasChanged();
         }
     }
 

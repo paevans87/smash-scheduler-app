@@ -421,11 +421,15 @@ else
     {
         if (_session == null) return;
 
+        var benchedCount = GetBenchedPlayerCount();
+        var maxGames = benchedCount / 4;
+
         var optionsParams = new DialogParameters<GenerationOptionsDialog>
         {
             { x => x.AllCourts, new List<int>() },
             { x => x.CourtLabels, _session.CourtLabels },
-            { x => x.ShowCourts, false }
+            { x => x.ShowCourts, false },
+            { x => x.MaxMatchCount, maxGames }
         };
 
         var optionsDialogOptions = new DialogOptions

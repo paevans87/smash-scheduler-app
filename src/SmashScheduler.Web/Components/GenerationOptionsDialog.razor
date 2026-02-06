@@ -34,7 +34,7 @@
                     <MudNumericField T="int"
                                      @bind-Value="_matchCount"
                                      Min="1"
-                                     Max="10"
+                                     Max="MaxMatchCount"
                                      Variant="Variant.Outlined"
                                      Label="Games to generate" />
                 </div>
@@ -81,6 +81,7 @@
     [Parameter] public List<int> AllCourts { get; set; } = new();
     [Parameter] public Dictionary<int, string> CourtLabels { get; set; } = new();
     [Parameter] public bool ShowCourts { get; set; } = true;
+    [Parameter] public int MaxMatchCount { get; set; } = 10;
 
     private HashSet<int> _excludedCourts = new();
     private GenerationStrategy _strategy = GenerationStrategy.ClubDefault;

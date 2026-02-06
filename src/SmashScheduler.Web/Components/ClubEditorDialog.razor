@@ -95,15 +95,6 @@
                 <MudSelectItem Value="BlacklistMode.Preferred">Preferred</MudSelectItem>
                 <MudSelectItem Value="BlacklistMode.HardLimit">Hard Limit</MudSelectItem>
             </MudSelect>
-
-            @if (!IsEditMode)
-            {
-                <MudDivider Class="my-1" />
-                <MudCheckBox @bind-Value="_seedTestData"
-                             Label="Seed club with test data (26 players)"
-                             Color="Color.Primary"
-                             Disabled="_isSubmitting" />
-            }
         </MudStack>
     </DialogContent>
     <DialogActions>
@@ -132,7 +123,6 @@
     private int _matchHistoryWeight = 35;
     private int _timeOffCourtWeight = 25;
     private BlacklistMode _blacklistMode = BlacklistMode.Preferred;
-    private bool _seedTestData;
     private string? _errorMessage;
     private bool _isSubmitting;
 
@@ -166,7 +156,10 @@
 
     private async Task Submit()
     {
-        if (!IsValid) return;
+        if (!IsValid)
+        {
+            return;
+        }
 
         _isSubmitting = true;
         _errorMessage = null;
@@ -194,9 +187,9 @@
             {
                 var club = await ClubService.CreateClubAsync(_name, _courtCount, _gameType, weights, _blacklistMode);
 
-                if (_seedTestData)
+                if (club.Name == "Sunday @ Charters")
                 {
-                    await PlayerService.SeedTestPlayersAsync(club.Id);
+                    await PlayerService.SeedPlayersFromFileAsync(club.Id);
                 }
 
                 MudDialog.Close(DialogResult.Ok(club));

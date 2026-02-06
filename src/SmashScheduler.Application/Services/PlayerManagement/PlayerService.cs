@@ -1,11 +1,12 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using SmashScheduler.Application.Interfaces.Repositories;
 using SmashScheduler.Domain.Entities;
 using SmashScheduler.Domain.Enums;
 
 namespace SmashScheduler.Application.Services.PlayerManagement;
 
-public class PlayerService(
-    IPlayerRepository playerRepository) : IPlayerService
+public class PlayerService(IPlayerRepository playerRepository, HttpClient client) : IPlayerService
 {
     public async Task<Player?> GetByIdAsync(Guid id)
     {
@@ -79,42 +80,37 @@ public class PlayerService(
     {
         await playerRepository.RemoveFromBlacklistAsync(playerId, blacklistedPlayerId);
     }
-
-    public async Task SeedTestPlayersAsync(Guid clubId, int count = 26)
+    
+    public async Task SeedPlayersFromFileAsync(Guid clubId)
     {
-        var random = new Random();
-
-        var maleNames = new[]
+        var relativePath = "SundayCharters.json";
+        var data = await client.GetFromJsonAsync<PlayerFileImportWrapperDto>(relativePath);
+        if (data == null || data.Players.Count == 0)
         {
-            "James", "Oliver", "William", "Henry", "George", "Charlie", "Thomas", "Jack",
-            "Harry", "Oscar", "Leo", "Archie", "Joshua", "Max", "Ethan", "Lucas",
-            "Jacob", "Alexander", "Daniel", "Sebastian", "Adam", "Edward", "Samuel", "Joseph",
-            "David", "Benjamin", "Noah", "Liam"
-        };
-
-        var femaleNames = new[]
+            throw new FileNotFoundException("The seed file could not be parsed or there are no players listed.");
+        }
+        
+        foreach (var p in data.Players)
         {
-            "Olivia", "Emma", "Charlotte", "Amelia", "Isla", "Ava", "Mia", "Grace",
-            "Freya", "Emily", "Sophia", "Lily", "Isabella", "Evie", "Poppy", "Ella",
-            "Sophie", "Jessica", "Alice", "Florence", "Daisy", "Matilda", "Rosie", "Eva",
-            "Lucy", "Hannah", "Chloe", "Ruby"
-        };
+            var gender = (Gender)p.Gender;
 
-        var playStyles = Enum.GetValues<PlayStylePreference>();
-        var maleIndex = 0;
-        var femaleIndex = 0;
+            var playStyle = (PlayStylePreference)p.PlayStylePreference;
 
-        for (var i = 0; i < count; i++)
-        {
-            var gender = random.Next(2) == 0 ? Gender.Male : Gender.Female;
-            var name = gender == Gender.Male
-                ? maleNames[maleIndex++ % maleNames.Length]
-                : femaleNames[femaleIndex++ % femaleNames.Length];
-
-            var skillLevel = random.Next(1, 11);
-            var playStyle = playStyles[random.Next(playStyles.Length)];
-
-            await CreatePlayerAsync(clubId, name, skillLevel, gender, playStyle);
+            await CreatePlayerAsync(clubId, p.Name, p.SkillLevel, gender, playStyle);
         }
     }
+
+    private class PlayerFileImportWrapperDto
+    {
+        public List<PlayerFileImportDto> Players { get; set; } = new();
+    }
+    
+    private class PlayerFileImportDto
+    {
+        public string Name { get; set; }
+        public int SkillLevel { get; set; }
+        public int Gender { get; set; }
+        public int PlayStylePreference { get; set; }
+    }
 }
+

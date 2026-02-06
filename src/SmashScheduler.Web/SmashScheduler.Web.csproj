@@ -21,4 +21,11 @@
     <ProjectReference Include="..\SmashScheduler.Shared\SmashScheduler.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\SundayCharters.json">
+      <Link>wwwroot\SundayCharters.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

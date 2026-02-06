@@ -54,6 +54,7 @@ else
                       GamesPlayedLookup="@GetGamesPlayedLookup()"
                       CanGenerateMatches="@CanGenerateMatches()"
                       OnGenerateMatches="GenerateMatches"
+                      OnAddManualMatch="OpenManualMatchDialog"
                       OnMatchComplete="CompleteMatch"
                       OnMatchPlayersUpdate="UpdateMatchPlayers"
                       OnStartDraftMatch="StartDraftMatch"
@@ -147,19 +148,9 @@ else
 
         if (result is { Canceled: false, Data: MatchPreviewResult previewResult })
         {
-            if (previewResult.SaveAsDraft)
+            foreach (var candidate in previewResult.Matches)
             {
-                foreach (var candidate in previewResult.Matches)
-                {
-                    await MatchService.CreateDraftMatchAsync(SessionId, candidate.PlayerIds);
-                }
-            }
-            else
-            {
-                foreach (var candidate in previewResult.Matches)
-                {
-                    await MatchService.CreateMatchAsync(SessionId, candidate.CourtNumber, candidate.PlayerIds, true);
-                }
+                await MatchService.CreateMatchAsync(SessionId, candidate.CourtNumber, candidate.PlayerIds, true);
             }
 
             await LoadData();
@@ -275,6 +266,89 @@ else
         }
 
         return lookup;
+    }
+
+    private async Task OpenManualMatchDialog()
+    {
+        if (_session == null) return;
+
+        var usedCourts = _activeMatches
+            .Where(m => m.State == MatchState.InProgress)
+            .Select(m => m.CourtNumber)
+            .ToHashSet();
+
+        var availableCourts = Enumerable.Range(1, _session.CourtCount)
+            .Where(c => !usedCourts.Contains(c))
+            .ToList();
+
+        if (!availableCourts.Any()) return;
+
+        var courtNumber = availableCourts.First();
+
+        if (availableCourts.Count > 1)
+        {
+            var courtParams = new DialogParameters<CourtSelectionDialog>
+            {
+                { x => x.AvailableCourts, availableCourts },
+                { x => x.CourtLabels, _session.CourtLabels }
+            };
+
+            var courtDialog = await DialogService.ShowAsync<CourtSelectionDialog>(
+                "Select Court", courtParams, new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, CloseOnEscapeKey = true });
+            var courtResult = await courtDialog.Result;
+
+            if (courtResult is { Canceled: false, Data: int selectedCourt })
+            {
+                courtNumber = selectedCourt;
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        var committedPlayerIds = _activeMatches
+            .Where(m => m.State != MatchState.Completed)
+            .SelectMany(m => m.PlayerIds)
+            .ToHashSet();
+
+        var benchPlayerIds = _session.SessionPlayers
+            .Where(sp => sp.IsActive && !committedPlayerIds.Contains(sp.PlayerId))
+            .Select(sp => sp.PlayerId)
+            .ToList();
+
+        var parameters = new DialogParameters<ManualMatchDialog>
+        {
+            { x => x.CourtNumber, courtNumber },
+            { x => x.PlayerLookup, _playerLookup },
+            { x => x.BenchPlayerIds, benchPlayerIds },
+            { x => x.SuggestedPlayerIds, new List<Guid>() }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ManualMatchDialog>("Create Match", parameters, options);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false, Data: ManualMatchResult manualResult })
+        {
+            if (manualResult.SaveAsDraft)
+            {
+                await MatchService.CreateDraftMatchAsync(SessionId, manualResult.PlayerIds);
+            }
+            else
+            {
+                await MatchService.CreateMatchAsync(SessionId, manualResult.CourtNumber, manualResult.PlayerIds, false);
+            }
+
+            await LoadData();
+            StateHasChanged();
+        }
     }
 
     private async Task EndSession()

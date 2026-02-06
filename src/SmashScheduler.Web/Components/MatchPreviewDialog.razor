@@ -117,12 +117,6 @@
                 Re-generate
             </MudButton>
         }
-        <MudButton OnClick="SaveAsDraft"
-                   Color="Color.Info"
-                   Variant="Variant.Outlined"
-                   Disabled="@(!_currentMatches.Any())">
-            Save as Draft@(_currentMatches.Count != 1 ? "s" : "")
-        </MudButton>
         <MudButton OnClick="Submit"
                    Color="Color.Primary"
                    Variant="Variant.Filled"
@@ -182,6 +176,4 @@
     private void Cancel() => MudDialog.Cancel();
 
     private void Submit() => MudDialog.Close(DialogResult.Ok(new MatchPreviewResult(_currentMatches, false)));
-
-    private void SaveAsDraft() => MudDialog.Close(DialogResult.Ok(new MatchPreviewResult(_currentMatches, true)));
 }

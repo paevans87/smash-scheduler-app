@@ -11,7 +11,7 @@
 We should be able to remove courts from the generation instead of always generating matches on all courts. Do it for all by default, then let the user remove a court if required.
 
 ### Match Generation Options
-The FAB should bring up the available options "Auto Generate", "Add manual"
+- [x] The FAB should bring up the available options "Auto Generate", "Add manual"
 
 ### Generation Overrides
 The FAB should also have options to generate 'types' of matchups. 
@@ -20,7 +20,7 @@ Strong - Focus on equal skill of the higher score
 Players With Least Games - Focus on getting the players who have played the least on the court, skill score being the secondary
 
 ### Save as Draft
-We should remove this from auto generated options and only have this available on manual creation
+- [x] We should remove this from auto generated options and only have this available on manual creation
 
 ## 3: Match Completion
 ### Display

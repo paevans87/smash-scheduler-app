@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using SmashScheduler.Application.Interfaces.Repositories;
 using SmashScheduler.Application.Services.MatchManagement;
+using SmashScheduler.Application.Services.Matchmaking.Models;
 using SmashScheduler.Domain.Enums;
 using DomainMatch = SmashScheduler.Domain.Entities.Match;
 using Xunit;
@@ -178,5 +179,27 @@ public class MatchServiceTests
         var act = async () => await _matchService.StartDraftMatchAsync(matchId, 2);
 
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Match is not a draft");
+    }
+
+    [Fact]
+    public void ManualMatchResult_WithSaveAsDraftTrue_StoresCorrectly()
+    {
+        var playerIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+        var result = new ManualMatchResult(3, playerIds, true);
+
+        result.CourtNumber.Should().Be(3);
+        result.PlayerIds.Should().BeEquivalentTo(playerIds);
+        result.SaveAsDraft.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ManualMatchResult_WithSaveAsDraftFalse_StoresCorrectly()
+    {
+        var playerIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+        var result = new ManualMatchResult(1, playerIds, false);
+
+        result.CourtNumber.Should().Be(1);
+        result.PlayerIds.Should().BeEquivalentTo(playerIds);
+        result.SaveAsDraft.Should().BeFalse();
     }
 }

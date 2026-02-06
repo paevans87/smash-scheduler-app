@@ -94,12 +94,21 @@
 
 @if (CanGenerateMatches)
 {
-    <MudFab Class="@($"{GetFabClass()} smash-fab-fixed")"
-            StartIcon="@(IsGenerating ? Icons.Material.Filled.Sync : Icons.Material.Filled.AutoAwesome)"
-            Label="@(IsGenerating ? "Generating..." : "Generate Matches")"
-            OnClick="HandleGenerateMatches"
-            Disabled="@IsGenerating"
-            Size="Size.Large" />
+    <MudMenu AnchorOrigin="Origin.TopCenter"
+             TransformOrigin="Origin.BottomCenter"
+             Class="smash-fab-fixed">
+        <ActivatorContent>
+            <MudFab Class="@GetFabClass()"
+                    StartIcon="@(IsGenerating ? Icons.Material.Filled.Sync : Icons.Material.Filled.Add)"
+                    Label="@(IsGenerating ? "Generating..." : "Matches")"
+                    Disabled="@IsGenerating"
+                    Size="Size.Large" />
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Icon="@Icons.Material.Filled.AutoAwesome" OnClick="HandleGenerateMatches">Auto Generate</MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => OnAddManualMatch.InvokeAsync()">Add Manual</MudMenuItem>
+        </ChildContent>
+    </MudMenu>
 }
 
 @code {
@@ -112,6 +121,7 @@
     [Parameter] public EventCallback<(Guid MatchId, int CourtNumber)> OnStartDraftMatch { get; set; }
     [Parameter] public EventCallback<Guid> OnDeleteDraftMatch { get; set; }
     [Parameter] public bool CanGenerateMatches { get; set; }
+    [Parameter] public EventCallback OnAddManualMatch { get; set; }
     [Parameter] public Dictionary<Guid, int> GamesPlayedLookup { get; set; } = new();
 
     private bool IsGenerating { get; set; }

@@ -54,6 +54,9 @@ html, body {
 
 .smash-app-bar {
     border-bottom: 1px solid var(--smash-border);
+}
+
+.smash-app-bar .mud-toolbar {
     overflow: hidden;
 }
 
@@ -277,6 +280,7 @@ html, body {
     background: linear-gradient(180deg, rgba(46,204,113,0.05), transparent);
     border-radius: var(--radius-xl);
     margin-bottom: var(--spacing-xl);
+    overflow: hidden;
 }
 
 .hero-icon {
@@ -291,12 +295,14 @@ html, body {
 .hero-title {
     font-weight: 700;
     margin-bottom: var(--spacing-sm);
+    overflow-wrap: break-word;
 }
 
 .hero-subtitle {
     color: var(--smash-text-secondary);
     max-width: 400px;
     margin: 0 auto var(--spacing-lg);
+    overflow-wrap: break-word;
 }
 
 .smash-fab {

@@ -12,5 +12,5 @@
 - [x] Underneath Add Manual we should add here the "Create Draft" flow
 
 ## 4: Main Page
-### Overfill
+### Overspill
 - [x] The "Smash Scheduler" text is overspilling causing scroll bars.

@@ -1,16 +1,9 @@
 # Next Steps
 ## 1: Match Generation
-### FAB
-- [x] Create Draft should have two options: Auto & manual - both should be available when all courts are in use so that the user can pre-organise the next game.
+### Auto Draft
+- When no courts are available, it does not bring up the match confirmation dialogue so it never saves the draft
+- The user should enter the number of games they wish to create via auto draft
 
-
-## 2: Active Session
-### Session Stats
-- [x] Currently we show In Progress, Completed, On Bench & Total play time. Lets change Total Play time to "Average Match Duration" and "On Bench" to "Average Games Per Player"
-
-### Player Statistics
-- [x] We should make the table as compact as possible to ensure it renders well on a mobile. Currently it needs to be scrolled & it is. Lets remove the skill avatar, make it sortable by the header, remove the status badge with an emoji instead to save space.
-
-## 3: Settings Cog
-### Settings
-- [x] We should add a simple dialogue with settings. For now we will only have 2 settings available: theme (Dark mode, light mode, system) and an option to full wipe the database (start from scratch).
+## 2: Session Stat Cards
+### UX/UI
+When in dark mode, the text is hard to read (green on green). The number should be white (ensuring we use mudtheme). When in light mode it should be black.

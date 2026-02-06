@@ -1,10 +1,10 @@
 # Next Steps 
 ## 1: Sessions Draft
 ### Abandon
-We should have an option to abandon/delete the draft.
+- [x] We should have an option to abandon/delete the draft.
 
 ### Player Search
-A search field for the user to use to search for a player (with typeahead) 
+- [x] A search field for the user to use to search for a player (with typeahead) 
 
 ## 2: Generate & Confirm Matches
 ### Court Removal

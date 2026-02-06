@@ -6,6 +6,7 @@
 @inject ISessionStateManager SessionStateManager
 @inject IPlayerService PlayerService
 @inject NavigationManager Navigation
+@inject IDialogService DialogService
 
 <PageTitle>Session Draft</PageTitle>
 
@@ -76,6 +77,16 @@ else
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-3" Elevation="1">
                 <MudText Typo="Typo.h6" GutterBottom="true">Available Players (@GetAvailablePlayers().Count())</MudText>
+                <MudTextField T="string"
+                              @bind-Value="_playerSearchText"
+                              Placeholder="Search players..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Immediate="true"
+                              Clearable="true"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="mb-2" />
                 <MudStack Spacing="1">
                     @foreach (var player in GetAvailablePlayers())
                     {
@@ -113,14 +124,22 @@ else
         </MudItem>
     </MudGrid>
 
-    <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.FlexEnd">
-        <MudButton Variant="Variant.Outlined" OnClick="GoBack">Back</MudButton>
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   Disabled="@(!CanStartSession())"
-                   OnClick="StartSession">
-            Create Session (@GetSessionPlayerCount() players)
+    <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.SpaceBetween">
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Error"
+                   StartIcon="@Icons.Material.Filled.Delete"
+                   OnClick="AbandonDraft">
+            Abandon Draft
         </MudButton>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" OnClick="GoBack">Back</MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Disabled="@(!CanStartSession())"
+                       OnClick="StartSession">
+                Create Session (@GetSessionPlayerCount() players)
+            </MudButton>
+        </MudStack>
     </MudStack>
 
     @if (!CanStartSession())
@@ -137,6 +156,7 @@ else
 
     private Session? _session;
     private List<Player>? _allPlayers;
+    private string? _playerSearchText;
 
     private DateTime? _selectedDate
     {
@@ -179,7 +199,12 @@ else
     {
         if (_allPlayers == null || _session == null) return Enumerable.Empty<Player>();
         var sessionPlayerIds = _session.SessionPlayers.Select(sp => sp.PlayerId).ToHashSet();
-        return _allPlayers.Where(p => !sessionPlayerIds.Contains(p.Id));
+        var available = _allPlayers.Where(p => !sessionPlayerIds.Contains(p.Id));
+        if (!string.IsNullOrWhiteSpace(_playerSearchText))
+        {
+            available = available.Where(p => p.Name.Contains(_playerSearchText, StringComparison.OrdinalIgnoreCase));
+        }
+        return available;
     }
 
     private int GetSessionPlayerCount() => _session?.SessionPlayers.Count ?? 0;
@@ -206,6 +231,21 @@ else
         }
         await SessionStateManager.ActivateSessionAsync(SessionId);
         Navigation.NavigateTo($"/clubs/{ClubId}/sessions/{SessionId}/active");
+    }
+
+    private async Task AbandonDraft()
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Abandon Draft",
+            "Are you sure you want to abandon this draft? This action cannot be undone.",
+            yesText: "Abandon",
+            cancelText: "Cancel");
+
+        if (confirmed == true)
+        {
+            await SessionService.DeleteSessionAsync(SessionId);
+            Navigation.NavigateTo($"/clubs/{ClubId}/sessions");
+        }
     }
 
     private void GoBack()

@@ -208,15 +208,16 @@ else
         return candidates;
     }
 
-    private async Task CompleteMatch(Guid matchId)
+    private async Task CompleteMatch((Guid MatchId, int? PreSelectedWinner) args)
     {
-        var match = _activeMatches.FirstOrDefault(m => m.Id == matchId);
+        var match = _activeMatches.FirstOrDefault(m => m.Id == args.MatchId);
         if (match == null) return;
 
         var parameters = new DialogParameters<MatchResultDialog>
         {
             { x => x.Match, match },
-            { x => x.PlayerLookup, _playerLookup }
+            { x => x.PlayerLookup, _playerLookup },
+            { x => x.PreSelectedWinner, args.PreSelectedWinner }
         };
 
         var options = new DialogOptions
@@ -232,7 +233,7 @@ else
         if (result is { Canceled: false })
         {
             var (score, winners) = ((MatchScore?, List<Guid>?))result.Data!;
-            await MatchService.CompleteMatchAsync(matchId, winners, score);
+            await MatchService.CompleteMatchAsync(args.MatchId, winners, score);
             await LoadData();
             StateHasChanged();
         }

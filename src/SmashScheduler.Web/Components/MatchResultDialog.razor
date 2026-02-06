@@ -98,10 +98,19 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter, EditorRequired] public Match Match { get; set; } = null!;
     [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
+    [Parameter] public int? PreSelectedWinner { get; set; }
 
     private int? _team1Score;
     private int? _team2Score;
     private int? _selectedWinner;
+
+    protected override void OnInitialized()
+    {
+        if (PreSelectedWinner is 1 or 2)
+        {
+            _selectedWinner = PreSelectedWinner;
+        }
+    }
 
     private bool HasValidScores => _team1Score.HasValue && _team2Score.HasValue;
     private bool CanSubmit => _selectedWinner.HasValue || HasValidScores;

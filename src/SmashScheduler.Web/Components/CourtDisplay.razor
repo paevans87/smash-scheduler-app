@@ -41,7 +41,7 @@
     [Parameter] public Dictionary<int, string> CourtLabels { get; set; } = new();
     [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
     [Parameter] public bool IsReadOnly { get; set; }
-    [Parameter] public EventCallback<Guid> OnMatchComplete { get; set; }
+    [Parameter] public EventCallback<(Guid MatchId, int? PreSelectedWinner)> OnMatchComplete { get; set; }
     [Parameter] public EventCallback<Guid> OnMatchEdit { get; set; }
 
     private Match? GetMatchForCourt(int courtNumber)

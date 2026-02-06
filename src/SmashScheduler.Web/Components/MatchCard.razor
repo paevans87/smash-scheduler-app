@@ -34,7 +34,7 @@
     </MudCardHeader>
     <MudCardContent>
         <MudStack Spacing="2">
-            <div class="team-section team-1">
+            <div class="@GetTeamSectionClass("team-1")" @onclick="() => CompleteWithTeam(1)">
                 <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight: 600;">TEAM 1</MudText>
                 @foreach (var player in GetTeam1Players())
                 {
@@ -47,7 +47,7 @@
 
             <div class="vs-divider">vs</div>
 
-            <div class="team-section team-2">
+            <div class="@GetTeamSectionClass("team-2")" @onclick="() => CompleteWithTeam(2)">
                 <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">TEAM 2</MudText>
                 @foreach (var player in GetTeam2Players())
                 {
@@ -76,7 +76,7 @@
                            Size="Size.Large"
                            FullWidth="true"
                            StartIcon="@Icons.Material.Filled.CheckCircle"
-                           OnClick="@(() => OnComplete.InvokeAsync(Match.Id))">
+                           OnClick="@(() => OnComplete.InvokeAsync((Match.Id, (int?)null)))">
                     Complete Match
                 </MudButton>
                 <MudButton Variant="Variant.Outlined"
@@ -97,7 +97,7 @@
     [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
     [Parameter] public string? CourtLabel { get; set; }
     [Parameter] public bool IsReadOnly { get; set; }
-    [Parameter] public EventCallback<Guid> OnComplete { get; set; }
+    [Parameter] public EventCallback<(Guid MatchId, int? PreSelectedWinner)> OnComplete { get; set; }
     [Parameter] public EventCallback<Guid> OnEdit { get; set; }
 
     private string GetDisplayCourtLabel() =>
@@ -107,6 +107,20 @@
     {
         var baseClass = "match-card";
         return Match.State == MatchState.Completed ? $"{baseClass} match-card--complete" : baseClass;
+    }
+
+    private string GetTeamSectionClass(string teamClass)
+    {
+        var baseClass = $"team-section {teamClass}";
+        return !IsReadOnly && Match.State == MatchState.InProgress
+            ? $"{baseClass} team-section--clickable"
+            : baseClass;
+    }
+
+    private async Task CompleteWithTeam(int teamNumber)
+    {
+        if (IsReadOnly || Match.State != MatchState.InProgress) return;
+        await OnComplete.InvokeAsync((Match.Id, teamNumber));
     }
 
     private IEnumerable<Player> GetTeam1Players()

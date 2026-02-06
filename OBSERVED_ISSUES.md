@@ -24,7 +24,7 @@ We should remove this from auto generated options and only have this available o
 
 ## 3: Match Completion
 ### Display
-The team content should be centered to use the card size more effectively.
+- [x] The team content should be centred to use the card size more effectively.
 
 ### Complete Match
-The team card should be clickable to bring up the "Complete Match" dialog with the selected team pre-selected as the winners.
+- [x] The team card should be clickable to bring up the "Complete Match" dialogue with the selected team pre-selected as the winners.

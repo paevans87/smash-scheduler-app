@@ -143,6 +143,24 @@ html, body {
 .match-card .team-section {
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-sm);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.team-section--clickable {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.team-section--clickable:hover {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-sm);
+}
+
+.team-section--clickable:active {
+    transform: scale(0.98);
 }
 
 .match-card .team-1 {

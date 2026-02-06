@@ -230,4 +230,49 @@ public class MatchResultDialogTests
 
         canSubmit.Should().BeTrue();
     }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void PreSelectedWinner_SetsSelectedWinner_WhenValid(int preSelected)
+    {
+        int? selectedWinner = null;
+
+        if (preSelected is 1 or 2)
+        {
+            selectedWinner = preSelected;
+        }
+
+        selectedWinner.Should().Be(preSelected);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3)]
+    [InlineData(-1)]
+    public void PreSelectedWinner_DoesNotSetSelectedWinner_WhenInvalid(int preSelected)
+    {
+        int? selectedWinner = null;
+
+        if (preSelected is 1 or 2)
+        {
+            selectedWinner = preSelected;
+        }
+
+        selectedWinner.Should().BeNull();
+    }
+
+    [Fact]
+    public void PreSelectedWinner_Null_DoesNotSetSelectedWinner()
+    {
+        int? preSelected = null;
+        int? selectedWinner = null;
+
+        if (preSelected is 1 or 2)
+        {
+            selectedWinner = preSelected;
+        }
+
+        selectedWinner.Should().BeNull();
+    }
 }

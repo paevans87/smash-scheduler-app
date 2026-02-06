@@ -107,7 +107,7 @@
     [Parameter] public List<Match> ActiveMatches { get; set; } = new();
     [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
     [Parameter] public EventCallback OnGenerateMatches { get; set; }
-    [Parameter] public EventCallback<Guid> OnMatchComplete { get; set; }
+    [Parameter] public EventCallback<(Guid MatchId, int? PreSelectedWinner)> OnMatchComplete { get; set; }
     [Parameter] public EventCallback<(Guid MatchId, List<Guid> PlayerIds)> OnMatchPlayersUpdate { get; set; }
     [Parameter] public EventCallback<(Guid MatchId, int CourtNumber)> OnStartDraftMatch { get; set; }
     [Parameter] public EventCallback<Guid> OnDeleteDraftMatch { get; set; }

@@ -1,14 +1,10 @@
-@using MudBlazor
 @using SmashScheduler.Domain.Entities
 @using SmashScheduler.Domain.Enums
-@using SmashScheduler.Web.Components
 
 <MudPaper Class="player-card" Elevation="1">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width: 100%;">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-            <MudAvatar Size="Size.Medium" Variant="Variant.Filled" Style="@GetAvatarStyle()">
-                @Player.Name[0]
-            </MudAvatar>
+            <GenderStyledPlayerAvatar Player="Player"/>
             <MudText Typo="Typo.body1" Style="font-weight: 500;">@Player.Name</MudText>
         </MudStack>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">

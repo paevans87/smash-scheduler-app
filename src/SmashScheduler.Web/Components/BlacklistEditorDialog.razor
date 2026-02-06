@@ -1,4 +1,3 @@
-@using MudBlazor
 @using SmashScheduler.Application.Services.PlayerManagement
 @using SmashScheduler.Domain.Entities
 @using SmashScheduler.Domain.Enums
@@ -72,9 +71,7 @@
                             <MudPaper Class="player-card" Elevation="1">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width: 100%;">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                                        <MudAvatar Size="Size.Medium" Color="Color.Error" Variant="Variant.Filled">
-                                            @player.Name[0]
-                                        </MudAvatar>
+                                        <GenderStyledPlayerAvatar Player="player"/>
                                         <MudText Typo="Typo.body1" Style="font-weight: 500;">@player.Name</MudText>
                                     </MudStack>
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
@@ -111,9 +108,7 @@
                             <MudPaper Class="player-card player-selectable" Elevation="1">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width: 100%;">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                                        <MudAvatar Size="Size.Medium" Color="Color.Primary" Variant="Variant.Filled">
-                                            @player.Name[0]
-                                        </MudAvatar>
+                                        <GenderStyledPlayerAvatar Player="player"/>
                                         <MudText Typo="Typo.body1" Style="font-weight: 500;">@player.Name</MudText>
                                     </MudStack>
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">

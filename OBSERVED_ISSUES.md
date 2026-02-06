@@ -1,10 +1,30 @@
-Next up: 
+# Next Steps 
+## 1: Sessions Draft
+### Abandon
+We should have an option to abandon/delete the draft.
 
-1. Score weighting should be able to be set at the club level when creating a new club.Each strategy has a number picker that must add up to 100%.
+### Player Search
+A search field for the user to use to search for a player (with typeahead) 
 
-2. The club should also have a setting to set if the blacklist is "preferred" or a "hard limit. This should respected in the matching algorithm too.
+## 2: Generate & Confirm Matches
+### Court Removal
+We should be able to remove courts from the generation instead of always generating matches on all courts. Do it for all by default, then let the user remove a court if required.
 
+### Match Generation Options
+The FAB should bring up the available options "Auto Generate", "Add manual"
 
-3. When a match has been generated and the user is choosing to accept / change it. The user should be able to remove people and then re-run the matching algorithm (obviously not selecting. the same people who were removed.)
+### Generation Overrides
+The FAB should also have options to generate 'types' of matchups. 
+Equal - Focus on equal skill across players, either all male, all female, or mixed only
+Strong - Focus on equal skill of the higher score
+Players With Least Games - Focus on getting the players who have played the least on the court, skill score being the secondary
 
-4. The user should be able to select a 'draft' match that has been requested so they can put these people on when available. 
+### Save as Draft
+We should remove this from auto generated options and only have this available on manual creation
+
+## 3: Match Completion
+### Display
+The team content should be centered to use the card size more effectively.
+
+### Complete Match
+The team card should be clickable to bring up the "Complete Match" dialog with the selected team pre-selected as the winners.

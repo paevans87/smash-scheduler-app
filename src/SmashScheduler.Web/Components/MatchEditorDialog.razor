@@ -1,6 +1,4 @@
-@using MudBlazor
 @using SmashScheduler.Domain.Entities
-@using SmashScheduler.Web.Components
 
 <MudDialog>
     <TitleContent>
@@ -55,9 +53,7 @@
                             <MudPaper Class="@GetPlayerCardClass(isInOtherMatch)" Elevation="1">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width: 100%;">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                                        <MudAvatar Size="Size.Medium" Color="@(isInOtherMatch ? Color.Default : Color.Primary)" Variant="Variant.Filled">
-                                            @player.Name[0]
-                                        </MudAvatar>
+                                        <GenderedStyledPlayerAvatarWithStatusBadge Player="player" IsInOtherMatch="isInOtherMatch"/>
                                         <MudStack Spacing="0">
                                             <MudText Typo="Typo.body1" Style="font-weight: 500;">@player.Name</MudText>
                                             @if (isInOtherMatch)

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using MudBlazor;
 using MudBlazor.Services;
 using SmashScheduler.Application.Interfaces.Repositories;
 using SmashScheduler.Application.Services.ClubManagement;
@@ -13,7 +12,6 @@ using Fluxor;
 using SmashScheduler.Infrastructure.Web;
 using SmashScheduler.Web;
 using SmashScheduler.Web.Services;
-using SmashScheduler.Web.Themes;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");

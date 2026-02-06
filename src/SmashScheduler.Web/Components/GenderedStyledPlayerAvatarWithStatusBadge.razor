@@ -1,0 +1,13 @@
+﻿@using SmashScheduler.Domain.Entities
+@using SmashScheduler.Web.Extensions
+
+<MudBadge Color="@(IsInOtherMatch ? Color.Default : Color.Primary)">
+    <MudAvatar Size="Size.Medium" Variant="Variant.Filled" Style="@Player.GetGenderedAvatarCssStyle()">
+        @Player.GetPlayerInitialsForAvatar()
+    </MudAvatar>    
+</MudBadge>
+
+@code {
+    [Parameter] public required Player Player { get; set; }
+    [Parameter] public required bool IsInOtherMatch { get; set; }
+}

@@ -52,14 +52,12 @@ html, body {
     min-height: 100%;
 }
 
-/* This targets the specific div from your screenshot image_367f90.png */
 .mud-overlay-scrim.mud-overlay-dark {
-    background-color: rgba(0, 0, 0, 0.7) !important; /* Dramatic darkness */
-    backdrop-filter: blur(8px) !important;           /* Sleek blur */
-    -webkit-backdrop-filter: blur(8px) !important;  /* Mobile Safari support */
+    background-color: rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
 }
 
-/* Fixes the 'phantom' ghosting by ensuring the container doesn't have its own tint */
 .mud-dialog-container {
     background-color: transparent !important;
 }

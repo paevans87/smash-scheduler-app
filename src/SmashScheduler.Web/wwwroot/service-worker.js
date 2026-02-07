@@ -3,7 +3,7 @@ const CACHE_NAME = 'smash-scheduler-v2';
 const PRECACHE_ASSETS = [
     './css/app.css',
     './manifest.json',
-    './icon-192.png',
+    './images/icon-192.png',
 ];
 
 function isNavigationOrFrameworkRequest(request) {

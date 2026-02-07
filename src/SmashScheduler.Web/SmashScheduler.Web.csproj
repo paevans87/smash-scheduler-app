@@ -21,20 +21,15 @@
     <ProjectReference Include="..\SmashScheduler.Shared\SmashScheduler.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="wwwroot\favicon.ico">
+  <ItemGroup>   
+    <Content Update="wwwroot\images\icon-512.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\icon-180.png">
+    <Content Update="wwwroot\images\icon-180.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Update="wwwroot\icon-192.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Update="wwwroot\icon-512.png">
+    <Content Update="wwwroot\images\icon-192.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
-
 </Project>

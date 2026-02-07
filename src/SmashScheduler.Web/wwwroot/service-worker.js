@@ -4,7 +4,6 @@ const PRECACHE_ASSETS = [
     './css/app.css',
     './manifest.json',
     './icon-192.png',
-    './icon.svg'
 ];
 
 function isNavigationOrFrameworkRequest(request) {

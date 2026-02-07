@@ -135,13 +135,13 @@
     {
       "Name": "Jackson",
       "SkillLevel": 7,
-      "Gender": 1,
+      "Gender": 0,
       "PlayStylePreference": 2
     },
     {
       "Name": "Jeril",
       "SkillLevel": 6,
-      "Gender": 1,
+      "Gender": 0,
       "PlayStylePreference": 2
     }
   ]

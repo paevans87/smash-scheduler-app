@@ -56,27 +56,38 @@ else
         </MudItem>
     </MudGrid>
 
-    <MudText Typo="Typo.h5" GutterBottom="true">Match History</MudText>
-    <MudGrid>
-        @foreach (var match in _matches.OrderBy(m => m.StartedAt))
-        {
-            <MudItem xs="12" sm="6" md="4">
-                <MatchCard Match="@match"
-                           PlayerLookup="@_playerLookup"
-                           IsReadOnly="true" />
-            </MudItem>
-        }
-    </MudGrid>
-    @if (!_matches.Any())
-    {
-        <MudText Typo="Typo.body1" Color="Color.Secondary">No matches were played in this session.</MudText>
-    }
+    <MudExpansionPanels>
+        <MudExpansionPanel Expanded="false">
+            <TitleContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.History" Color="Color.Primary" />
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">Match History</MudText>
+                </MudStack>
+            </TitleContent>
+            <ChildContent>
+                <MudGrid>
+                    @foreach (var match in _matches.OrderBy(m => m.StartedAt))
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <MatchCard Match="@match"
+                                       PlayerLookup="@_playerLookup"
+                                       IsReadOnly="true" />
+                        </MudItem>
+                    }
+                </MudGrid>
+                @if (!_matches.Any())
+                {
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">No matches were played in this session.</MudText>
+                }
+            </ChildContent>
+        </MudExpansionPanel>
+    </MudExpansionPanels>
 
     <MudStack Row="true" Spacing="2" Class="mt-4">
-        <MudButton Variant="Variant.Outlined" OnClick="GoBack">Back to Sessions</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="@GoBack">Back to Sessions</MudButton>
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
-                   OnClick="ViewAnalytics">
+                   OnClick="@ViewAnalytics">
             View Analytics
         </MudButton>
     </MudStack>

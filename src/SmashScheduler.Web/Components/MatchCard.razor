@@ -2,40 +2,49 @@
 @using SmashScheduler.Domain.Enums
 
 <MudCard Class="@GetCardClass()" Elevation="2">
-    <MudCardHeader Class="pb-0">
-        <CardHeaderContent>
-            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="match-card-header-badges">
-                    <MudIcon Icon="@Icons.Material.Filled.SportsScore" Color="Color.Primary" />
-                    <MudText Typo="Typo.h6">@GetDisplayCourtLabel()</MudText>
-                    @if (!Match.WasAutomated)
+    @if (ShowHeader)
+    {
+        <MudCardHeader Class="pb-0">
+            <CardHeaderContent>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="match-card-header-badges">
+                        <MudIcon Icon="@Icons.Material.Filled.SportsScore" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6">@GetDisplayCourtLabel()</MudText>
+                        @if (!Match.WasAutomated)
+                        {
+                            <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined" Class="manual-badge">
+                                Manual
+                            </MudChip>
+                        }
+                    </MudStack>
+                    @if (Match.State == MatchState.Completed)
                     {
-                        <MudChip T="string" Color="Color.Info" Size="Size.Small" Variant="Variant.Outlined" Class="manual-badge">
-                            Manual
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="mr-1" />
+                            Complete
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Filled">
+                            <span class="status-dot mr-2"></span>
+                            Playing
                         </MudChip>
                     }
                 </MudStack>
-                @if (Match.State == MatchState.Completed)
-                {
-                    <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Filled">
-                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="mr-1" />
-                        Complete
-                    </MudChip>
-                }
-                else
-                {
-                    <MudChip T="string" Color="Color.Warning" Size="Size.Small" Variant="Variant.Filled">
-                        <span class="status-dot mr-2"></span>
-                        Playing
-                    </MudChip>
-                }
-            </MudStack>
-        </CardHeaderContent>
-    </MudCardHeader>
+            </CardHeaderContent>
+        </MudCardHeader>
+    }
     <MudCardContent>
         <MudStack Spacing="2">
-            <div class="@GetTeamSectionClass("team-1")" @onclick="() => CompleteWithTeam(1)">
-                <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight: 600;">TEAM 1</MudText>
+            <div class="@GetTeamSectionClass("team-1", 1)" @onclick="() => CompleteWithTeam(1)">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudText Typo="Typo.caption" Color="Color.Primary" Style="font-weight: 600;">TEAM 1</MudText>
+                    @if (IsWinningTeam(1))
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Warning" Size="Size.Small" />
+                    }
+                </MudStack>
                 @foreach (var player in GetTeam1Players())
                 {
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-1">
@@ -48,8 +57,14 @@
 
             <div class="vs-divider">vs</div>
 
-            <div class="@GetTeamSectionClass("team-2")" @onclick="() => CompleteWithTeam(2)">
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">TEAM 2</MudText>
+            <div class="@GetTeamSectionClass("team-2", 2)" @onclick="() => CompleteWithTeam(2)">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Style="font-weight: 600;">TEAM 2</MudText>
+                    @if (IsWinningTeam(2))
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.EmojiEvents" Color="Color.Warning" Size="Size.Small" />
+                    }
+                </MudStack>
                 @foreach (var player in GetTeam2Players())
                 {
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-1">
@@ -66,6 +81,22 @@
                 <MudText Typo="Typo.h5" Align="Align.Center" Color="Color.Primary">
                     @Match.Score.Team1Score - @Match.Score.Team2Score
                 </MudText>
+            }
+
+            @if (Match.State == MatchState.Completed && Match.CompletedAt.HasValue)
+            {
+                <MudDivider Class="my-2" />
+                <div class="match-timing">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Started: @Match.StartedAt.ToLocalTime().ToString("HH:mm")
+                    </MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Ended: @Match.CompletedAt.Value.ToLocalTime().ToString("HH:mm")
+                    </MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Duration: @FormatDuration(Match.CompletedAt.Value - Match.StartedAt)
+                    </MudText>
+                </div>
             }
         </MudStack>
     </MudCardContent>
@@ -99,6 +130,7 @@
     [Parameter] public Dictionary<Guid, Player> PlayerLookup { get; set; } = new();
     [Parameter] public string? CourtLabel { get; set; }
     [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool ShowHeader { get; set; } = true;
     [Parameter] public EventCallback<(Guid MatchId, int? PreSelectedWinner)> OnComplete { get; set; }
     [Parameter] public EventCallback<Guid> OnEdit { get; set; }
 
@@ -111,12 +143,33 @@
         return Match.State == MatchState.Completed ? $"{baseClass} match-card--complete" : baseClass;
     }
 
-    private string GetTeamSectionClass(string teamClass)
+    private string GetTeamSectionClass(string teamClass, int teamNumber)
     {
         var baseClass = $"team-section {teamClass}";
+        if (IsWinningTeam(teamNumber))
+            baseClass = $"{baseClass} team-section--winner";
         return !IsReadOnly && Match.State == MatchState.InProgress
             ? $"{baseClass} team-section--clickable"
             : baseClass;
+    }
+
+    private bool IsWinningTeam(int teamNumber)
+    {
+        if (Match.State != MatchState.Completed || Match.WinningPlayerIds.Count == 0)
+            return false;
+
+        var teamPlayerIds = teamNumber == 1
+            ? Match.PlayerIds.Take(2).ToHashSet()
+            : Match.PlayerIds.Skip(2).Take(2).ToHashSet();
+
+        return teamPlayerIds.SetEquals(Match.WinningPlayerIds.ToHashSet());
+    }
+
+    private string FormatDuration(TimeSpan duration)
+    {
+        if (duration.TotalHours >= 1)
+            return $"{(int)duration.TotalHours}h {duration.Minutes}m";
+        return $"{duration.Minutes}m";
     }
 
     private async Task CompleteWithTeam(int teamNumber)

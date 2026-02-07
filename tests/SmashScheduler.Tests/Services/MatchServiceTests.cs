@@ -4,6 +4,7 @@ using SmashScheduler.Application.Interfaces.Repositories;
 using SmashScheduler.Application.Services.MatchManagement;
 using SmashScheduler.Application.Services.Matchmaking.Models;
 using SmashScheduler.Domain.Enums;
+using SmashScheduler.Domain.ValueObjects;
 using DomainMatch = SmashScheduler.Domain.Entities.Match;
 using Xunit;
 
@@ -201,5 +202,81 @@ public class MatchServiceTests
         result.CourtNumber.Should().Be(1);
         result.PlayerIds.Should().BeEquivalentTo(playerIds);
         result.SaveAsDraft.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task CompleteMatchAsync_WithWinningPlayerIds_SetsWinningPlayerIds()
+    {
+        var matchId = Guid.NewGuid();
+        var winningPlayerIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+        var score = new MatchScore(21, 15);
+
+        var existingMatch = new DomainMatch
+        {
+            Id = matchId,
+            SessionId = Guid.NewGuid(),
+            CourtNumber = 1,
+            State = MatchState.InProgress,
+            PlayerIds = new List<Guid> { winningPlayerIds[0], winningPlayerIds[1], Guid.NewGuid(), Guid.NewGuid() },
+            StartedAt = DateTime.UtcNow.AddMinutes(-10)
+        };
+
+        _matchRepositoryMock.Setup(r => r.GetByIdAsync(matchId)).ReturnsAsync(existingMatch);
+
+        await _matchService.CompleteMatchAsync(matchId, winningPlayerIds, score);
+
+        existingMatch.WinningPlayerIds.Should().BeEquivalentTo(winningPlayerIds);
+        _matchRepositoryMock.Verify(r => r.UpdateAsync(existingMatch), Times.Once);
+    }
+
+    [Fact]
+    public async Task CompleteMatchAsync_WithNullWinningPlayerIds_DoesNotSetWinningPlayerIds()
+    {
+        var matchId = Guid.NewGuid();
+
+        var existingMatch = new DomainMatch
+        {
+            Id = matchId,
+            SessionId = Guid.NewGuid(),
+            CourtNumber = 1,
+            State = MatchState.InProgress,
+            PlayerIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() },
+            StartedAt = DateTime.UtcNow.AddMinutes(-10)
+        };
+
+        _matchRepositoryMock.Setup(r => r.GetByIdAsync(matchId)).ReturnsAsync(existingMatch);
+
+        await _matchService.CompleteMatchAsync(matchId, null, null);
+
+        existingMatch.WinningPlayerIds.Should().BeEmpty();
+        _matchRepositoryMock.Verify(r => r.UpdateAsync(existingMatch), Times.Once);
+    }
+
+    [Fact]
+    public async Task CompleteMatchAsync_SetsCompletedState()
+    {
+        var matchId = Guid.NewGuid();
+        var score = new MatchScore(21, 18);
+
+        var existingMatch = new DomainMatch
+        {
+            Id = matchId,
+            SessionId = Guid.NewGuid(),
+            CourtNumber = 1,
+            State = MatchState.InProgress,
+            PlayerIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() },
+            StartedAt = DateTime.UtcNow.AddMinutes(-15)
+        };
+
+        _matchRepositoryMock.Setup(r => r.GetByIdAsync(matchId)).ReturnsAsync(existingMatch);
+
+        await _matchService.CompleteMatchAsync(matchId, null, score);
+
+        existingMatch.State.Should().Be(MatchState.Completed);
+        existingMatch.CompletedAt.Should().NotBeNull();
+        existingMatch.CompletedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        existingMatch.Score.Should().NotBeNull();
+        existingMatch.Score!.Team1Score.Should().Be(21);
+        existingMatch.Score!.Team2Score.Should().Be(18);
     }
 }

@@ -156,6 +156,11 @@ html, body {
     align-items: center;
 }
 
+.team-section--winner {
+    border: 2px solid var(--smash-warning);
+    border-radius: var(--radius-sm);
+}
+
 .team-section--clickable {
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -475,6 +480,21 @@ html, body {
     height: 1px;
     background: var(--mud-palette-lines-default);
     margin: 0 var(--spacing-sm);
+}
+
+.match-timing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xxs);
+}
+
+@media (min-width: 600px) {
+    .match-timing {
+        flex-direction: row;
+        justify-content: center;
+        gap: var(--spacing-md);
+    }
 }
 
 .mud-button-filled.mud-button-primary {

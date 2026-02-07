@@ -71,6 +71,8 @@ public class MatchService(IMatchRepository matchRepository) : IMatchService
         match.State = MatchState.Completed;
         match.CompletedAt = DateTime.UtcNow;
         match.Score = score;
+        if (winningPlayerIds != null)
+            match.WinningPlayerIds = winningPlayerIds;
 
         await matchRepository.UpdateAsync(match);
     }

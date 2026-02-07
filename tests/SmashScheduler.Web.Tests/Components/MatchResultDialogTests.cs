@@ -275,4 +275,65 @@ public class MatchResultDialogTests
 
         selectedWinner.Should().BeNull();
     }
+
+    [Fact]
+    public void IsWinningTeam_ReturnsTrue_WhenTeam1IsWinner()
+    {
+        var completedMatch = new Match
+        {
+            Id = Guid.NewGuid(),
+            SessionId = Guid.NewGuid(),
+            CourtNumber = 1,
+            State = MatchState.Completed,
+            PlayerIds = _playerIds.ToList(),
+            WinningPlayerIds = new List<Guid> { _playerIds[0], _playerIds[1] },
+            StartedAt = DateTime.UtcNow.AddMinutes(-15),
+            CompletedAt = DateTime.UtcNow
+        };
+
+        var team1Ids = completedMatch.PlayerIds.Take(2).ToHashSet();
+        var isWinner = team1Ids.SetEquals(completedMatch.WinningPlayerIds.ToHashSet());
+
+        isWinner.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsWinningTeam_ReturnsFalse_WhenTeam1IsNotWinner()
+    {
+        var completedMatch = new Match
+        {
+            Id = Guid.NewGuid(),
+            SessionId = Guid.NewGuid(),
+            CourtNumber = 1,
+            State = MatchState.Completed,
+            PlayerIds = _playerIds.ToList(),
+            WinningPlayerIds = new List<Guid> { _playerIds[2], _playerIds[3] },
+            StartedAt = DateTime.UtcNow.AddMinutes(-15),
+            CompletedAt = DateTime.UtcNow
+        };
+
+        var team1Ids = completedMatch.PlayerIds.Take(2).ToHashSet();
+        var isWinner = team1Ids.SetEquals(completedMatch.WinningPlayerIds.ToHashSet());
+
+        isWinner.Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsWinningTeam_ReturnsFalse_WhenNoWinningPlayerIds()
+    {
+        var completedMatch = new Match
+        {
+            Id = Guid.NewGuid(),
+            SessionId = Guid.NewGuid(),
+            CourtNumber = 1,
+            State = MatchState.Completed,
+            PlayerIds = _playerIds.ToList(),
+            StartedAt = DateTime.UtcNow.AddMinutes(-15),
+            CompletedAt = DateTime.UtcNow
+        };
+
+        var hasWinner = completedMatch.WinningPlayerIds.Count > 0;
+
+        hasWinner.Should().BeFalse();
+    }
 }

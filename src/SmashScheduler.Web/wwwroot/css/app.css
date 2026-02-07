@@ -170,12 +170,25 @@ html, body {
     transform: scale(0.98);
 }
 
-.match-card .team-1 {
+.match-card .team-1,
+.team-card.team-1 {
     background: linear-gradient(135deg, rgba(46,204,113,0.08), rgba(46,204,113,0.04));
 }
 
-.match-card .team-2 {
+.match-card .team-2,
+.team-card.team-2 {
     background: linear-gradient(135deg, rgba(52,152,219,0.08), rgba(52,152,219,0.04));
+}
+
+.team-card {
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all var(--transition-fast);
+}
+
+.team-card--selected {
+    border-color: var(--mud-palette-warning);
 }
 
 .court-card-empty,

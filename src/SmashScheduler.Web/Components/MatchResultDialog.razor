@@ -18,7 +18,6 @@
                 <MudItem xs="5">
                     <MudPaper Class="@GetTeamCardClass(1)"
                               Elevation="@GetTeamElevation(1)"
-                              Style="@GetTeamCardStyle(1)"
                               @onclick="() => SelectWinner(1)">
                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                             <MudText Typo="Typo.caption" Color="@GetTeamLabelColour(1)" Style="font-weight: 600;">TEAM 1</MudText>
@@ -48,7 +47,6 @@
                 <MudItem xs="5">
                     <MudPaper Class="@GetTeamCardClass(2)"
                               Elevation="@GetTeamElevation(2)"
-                              Style="@GetTeamCardStyle(2)"
                               @onclick="() => SelectWinner(2)">
                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                             <MudText Typo="Typo.caption" Color="@GetTeamLabelColour(2)" Style="font-weight: 600;">TEAM 2</MudText>
@@ -160,23 +158,14 @@
 
     private string GetTeamCardClass(int team)
     {
-        return _selectedWinner == team ? "pa-3 team-card team-card--selected" : "pa-3 team-card";
+        var teamColour = team == 1 ? "team-1" : "team-2";
+        var selected = _selectedWinner == team ? " team-card--selected" : "";
+        return $"pa-3 team-card {teamColour}{selected}";
     }
 
     private int GetTeamElevation(int team)
     {
         return _selectedWinner == team ? 4 : 0;
-    }
-
-    private string GetTeamCardStyle(int team)
-    {
-        var baseColour = team == 1
-            ? "var(--mud-palette-primary-lighten)"
-            : "var(--mud-palette-secondary-lighten)";
-
-        var borderColour = _selectedWinner == team ? "var(--mud-palette-warning)" : "transparent";
-
-        return $"background-color: {baseColour}; border-radius: 8px; cursor: pointer; border: 2px solid {borderColour}; transition: all 0.2s ease;";
     }
 
     private Color GetTeamLabelColour(int team)

@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
+import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { AppBar } from "@/components/app-bar";
+import { SideNav } from "@/components/side-nav";
+import { BottomNav } from "@/components/bottom-nav";
+import { Fab } from "@/components/fab";
 
 type ClubLayoutProps = {
   children: React.ReactNode;
@@ -45,18 +48,16 @@ export default async function ClubLayout({
     redirect("/clubs");
   }
 
-  const { data: club } = await supabase
-    .from("clubs")
-    .select("name")
-    .eq("id", clubId)
-    .single();
-
-  const clubName = club?.name ?? "Club";
-
   return (
-    <div className="flex min-h-screen flex-col">
-      <AppBar clubId={clubId} clubName={clubName} userEmail={user.email!} />
-      <main className="flex-1">{children}</main>
+    <div className="flex min-h-screen">
+      <SideNav clubId={clubId} userEmail={user.email!} />
+      <div className="flex flex-1 flex-col md:min-h-screen">
+        <main className="flex-1 pb-16 md:pb-0">{children}</main>
+      </div>
+      <BottomNav clubId={clubId} userEmail={user.email!} />
+      <Fab label="Add new club" href="/pricing">
+        <Plus className="size-6" />
+      </Fab>
     </div>
   );
 }

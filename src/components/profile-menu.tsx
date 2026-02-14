@@ -15,9 +15,10 @@ import {
 
 type ProfileMenuProps = {
   userEmail: string;
+  showEmail?: boolean;
 };
 
-export function ProfileMenu({ userEmail }: ProfileMenuProps) {
+export function ProfileMenu({ userEmail, showEmail = false }: ProfileMenuProps) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -32,12 +33,17 @@ export function ProfileMenu({ userEmail }: ProfileMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button className="flex items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <Avatar>
             <AvatarFallback className="bg-primary text-primary-foreground">
               {initial}
             </AvatarFallback>
           </Avatar>
+          {showEmail && (
+            <span className="truncate text-sm text-muted-foreground">
+              {userEmail}
+            </span>
+          )}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

@@ -89,12 +89,14 @@ export async function POST(request: NextRequest) {
           ? subscription.customer
           : subscription.customer.id,
       p_current_period_end: periodEnd,
+      p_user_id: user.id,
     }
   );
 
   if (rpcError) {
+    console.error("RPC Error:", rpcError);
     return NextResponse.json(
-      { error: "Club creation failed" },
+      { error: "Club creation failed", details: rpcError.message },
       { status: 500 }
     );
   }

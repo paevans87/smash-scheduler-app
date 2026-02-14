@@ -11,6 +11,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProfileMenu } from "@/components/profile-menu";
@@ -66,10 +67,23 @@ export function SideNav({ clubSlug, clubName, userEmail }: SideNavProps) {
     {
       label: "Club Management",
       icon: Settings,
-      href: "#",
-      isActive: false,
+      href: `/clubs/${clubSlug}/manage`,
+      isActive: pathname.startsWith(`/clubs/${clubSlug}/manage`),
     },
   ];
+
+  const switchClubContent = (
+    <Link
+      href="/clubs"
+      className={cn(
+        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground",
+        collapsed && "justify-center px-0"
+      )}
+    >
+      <ArrowLeftRight className="size-5 shrink-0" />
+      {!collapsed && <span>Switch Club</span>}
+    </Link>
+  );
 
   return (
     <aside
@@ -125,6 +139,17 @@ export function SideNav({ clubSlug, clubName, userEmail }: SideNavProps) {
 
           return linkContent;
         })}
+
+        <div className="my-2 border-t" />
+
+        {collapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>{switchClubContent}</TooltipTrigger>
+            <TooltipContent side="right">Switch Club</TooltipContent>
+          </Tooltip>
+        ) : (
+          switchClubContent
+        )}
       </nav>
 
       <div className={cn("border-t p-2", collapsed && "flex justify-center")}>
@@ -138,12 +163,7 @@ export function SideNav({ clubSlug, clubName, userEmail }: SideNavProps) {
             <TooltipContent side="right">Profile</TooltipContent>
           </Tooltip>
         ) : (
-          <div className="flex items-center gap-3 px-3 py-2">
-            <ProfileMenu userEmail={userEmail} />
-            <span className="truncate text-sm text-muted-foreground">
-              {userEmail}
-            </span>
-          </div>
+          <ProfileMenu userEmail={userEmail} showEmail />
         )}
       </div>
 

@@ -1,24 +1,23 @@
-# General
+# Club 
+## FAB
+While in a club context, eg `/clubs/{club-slug}` the FAB should have the following options: 
+Add new Player
+Add new Session
 
-## offline & sync
-It is imperitive that this app works offline so we need to add the required safeguards in place to handle that. 
+## Player Management
+Shows a list of players in the club. All players should be listed with a coloured avatar (coloured based on gender) with their initials along with a second avatar showing their skill level (this should be coloured based on the value 0-10).
 
-Subscription, club management, etc can work online only for simplicity but the session management needs to work offline.
+A CTA to add a new player.
 
-To do this we will use Indexdb with a sync mechanism 
+There should be an edit icon for each player taking them to the edit player page.
 
-## Breadcrumbs
-I'd like to add breadcrumbs to make sure we are managing things correctly. 
+There should also be a delete icon for each player (with confirmation).
 
-## urls & slugs
-Rather than using the ID of a club / session, I'd like to use slugs. For instance `/clubs/{club-slug}`, `/sessions/{session-slug}` (session slug will likely be the date). 
+### Edit Player
+Name
+Skill Level (0-10) - default should be 5
+Gender (Female/male)
+Play style preference: Open/no preference (default), mix (male+female mix), level (male+male or female+female)
 
-## Patterns
-Update CLAUDE.md with the key patterns we are using so these are adhered to
-
-# Dashboard Display
-We'll add some simple stats to show on the dashboard display
-
-- Club Name
-- Active Member count
-- Upcoming session
+partner blacklist - add another player to the partner blacklist used for matchmaking
+opponent blacklist - add another player to the opponent blacklist used for matchmaking

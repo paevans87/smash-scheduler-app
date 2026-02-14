@@ -3,6 +3,7 @@ I have created a second Product for "Club Lite" which is the free version. We sh
 
 ## Multiple Clubs 
 If I create a second club, I get re-routed automatically to the existing club.
+I notice I get a 500 on `/api/checkout/fulfil` prior to this happening
 
 ### C:\Git\smash-scheduler\src\app\(protected)\clubs\page.tsx
 Lets remove the auto-direct to the club page if club count === 1 and change things around a little. 

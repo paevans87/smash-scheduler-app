@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { SideNav } from "@/components/side-nav";
 import { BottomNav } from "@/components/bottom-nav";
@@ -69,9 +68,7 @@ export default async function ClubLayout({
         <main className="flex-1 pb-16 md:pb-0">{children}</main>
       </div>
       <BottomNav clubSlug={clubSlug} userEmail={user.email!} />
-      <Fab label="Add new club" href="/pricing">
-        <Plus className="size-6" />
-      </Fab>
+      <Fab clubSlug={clubSlug} />
     </div>
   );
 }

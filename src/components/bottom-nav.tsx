@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProfileMenu } from "@/components/profile-menu";
 
@@ -20,6 +20,12 @@ export function BottomNav({ clubSlug, userEmail }: BottomNavProps) {
       icon: LayoutDashboard,
       href: `/clubs/${clubSlug}`,
       isActive: pathname === `/clubs/${clubSlug}`,
+    },
+    {
+      label: "Players",
+      icon: Users,
+      href: `/clubs/${clubSlug}/players`,
+      isActive: pathname.startsWith(`/clubs/${clubSlug}/players`),
     },
     {
       label: "Sessions",

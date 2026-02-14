@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  Users,
   Calendar,
   Settings,
   ChevronLeft,
@@ -49,6 +50,12 @@ export function SideNav({ clubSlug, clubName, userEmail }: SideNavProps) {
       icon: LayoutDashboard,
       href: `/clubs/${clubSlug}`,
       isActive: pathname === `/clubs/${clubSlug}`,
+    },
+    {
+      label: "Players",
+      icon: Users,
+      href: `/clubs/${clubSlug}/players`,
+      isActive: pathname.startsWith(`/clubs/${clubSlug}/players`),
     },
     {
       label: "Sessions",

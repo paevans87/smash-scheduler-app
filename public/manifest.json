@@ -1,0 +1,36 @@
+{
+  "name": "SmashScheduler",
+  "short_name": "SmashScheduler",
+  "description": "Badminton session management and matchmaking",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#2ECC71",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "purpose": "maskable",
+      "sizes": "512x512",
+      "src": "/icon-512.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "192x192",
+      "src": "/icon-192.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "180x180",
+      "src": "/icon-180.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "48x48",
+      "src": "/icon-48.png",
+      "type": "image/png"
+    }
+  ]
+}

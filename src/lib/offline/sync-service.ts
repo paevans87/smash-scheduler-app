@@ -143,3 +143,40 @@ export async function getSessionPlayersFromCache(sessionId: string) {
   const db = await getDb();
   return db.getAllFromIndex("session_players", "by-session", sessionId);
 }
+
+export async function getSessionFromCache(sessionId: string) {
+  const db = await getDb();
+  return db.get("sessions", sessionId);
+}
+
+export async function cacheSession(session: {
+  id: string;
+  club_id?: string;
+  slug?: string;
+  scheduled_date_time?: string;
+  court_count?: number;
+  state?: number;
+}) {
+  const db = await getDb();
+  const existing = await db.get("sessions", session.id);
+  const merged = { ...existing, ...session };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await db.put("sessions", merged as any);
+}
+
+export async function cacheSessionPlayer(sessionPlayer: {
+  session_id: string;
+  player_id: string;
+  is_active: boolean;
+}) {
+  const db = await getDb();
+  await db.put("session_players", sessionPlayer);
+}
+
+export async function removeSessionPlayerFromCache(
+  sessionId: string,
+  playerId: string
+) {
+  const db = await getDb();
+  await db.delete("session_players", [sessionId, playerId] as unknown as IDBKeyRange);
+}

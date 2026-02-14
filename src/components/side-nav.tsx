@@ -61,8 +61,8 @@ export function SideNav({ clubSlug, clubName, userEmail }: SideNavProps) {
     {
       label: "Sessions",
       icon: Calendar,
-      href: "#",
-      isActive: false,
+      href: `/clubs/${clubSlug}/sessions`,
+      isActive: pathname.startsWith(`/clubs/${clubSlug}/sessions`),
     },
     {
       label: "Club Management",

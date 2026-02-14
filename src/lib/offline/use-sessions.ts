@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useOnlineStatus } from "./online-status-provider";
 import { getSessionsFromCache, syncClubData } from "./sync-service";
@@ -18,6 +18,7 @@ type UseSessionsResult = {
   sessions: Session[];
   isLoading: boolean;
   isStale: boolean;
+  mutate: () => void;
 };
 
 export function useSessions(clubId: string): UseSessionsResult {
@@ -25,6 +26,11 @@ export function useSessions(clubId: string): UseSessionsResult {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isStale, setIsStale] = useState(false);
+  const [revalidateKey, setRevalidateKey] = useState(0);
+
+  const mutate = useCallback(() => {
+    setRevalidateKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,7 +44,7 @@ export function useSessions(clubId: string): UseSessionsResult {
           .from("sessions")
           .select("id, club_id, slug, scheduled_date_time, court_count, state")
           .eq("club_id", clubId)
-          .order("scheduled_date_time", { ascending: true });
+          .order("scheduled_date_time", { ascending: false });
 
         if (!cancelled && data) {
           setSessions(data);
@@ -63,7 +69,7 @@ export function useSessions(clubId: string): UseSessionsResult {
     return () => {
       cancelled = true;
     };
-  }, [clubId, isOnline]);
+  }, [clubId, isOnline, revalidateKey]);
 
-  return { sessions, isLoading, isStale };
+  return { sessions, isLoading, isStale, mutate };
 }

@@ -13,6 +13,16 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "SmashScheduler",
   description: "Badminton club session scheduler",
+  icons: {
+    icon: "/icon-48.png",
+    apple: "/icon-180.png",
+  },
+  manifest: "/manifest.json",
+  themeColor: "#2ECC71",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({

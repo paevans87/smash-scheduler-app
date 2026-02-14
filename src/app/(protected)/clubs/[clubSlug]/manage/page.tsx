@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { MatchMakingProfileList } from "./match-making-profile-list";
+import { ClubSettingsForm } from "./club-settings-form";
 
 type MatchMakingProfile = {
   id: string;
@@ -21,6 +22,13 @@ type MatchMakingProfile = {
   apply_gender_matching: boolean;
   blacklist_mode: number;
   is_default: boolean;
+};
+
+type Club = {
+  id: string;
+  name: string;
+  default_court_count: number;
+  game_type: number;
 };
 
 type ClubManagementPageProps = {
@@ -43,7 +51,7 @@ export default async function ClubManagementPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name")
+    .select("id, name, default_court_count, game_type")
     .eq("slug", clubSlug)
     .single();
 
@@ -78,6 +86,18 @@ export default async function ClubManagementPage({
           </p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Club Settings</CardTitle>
+          <CardDescription>
+            Update your club name, default courts, and game type
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ClubSettingsForm club={club as Club} clubSlug={clubSlug} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">

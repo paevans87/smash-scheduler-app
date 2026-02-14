@@ -23,11 +23,22 @@ export async function syncPendingChanges(
           .eq("id", id as string);
         if (error) throw error;
       } else if (change.operation === "delete") {
-        const { error } = await supabase
-          .from(change.table)
-          .delete()
-          .eq("id", change.payload.id as string);
-        if (error) throw error;
+        // Handle tables with compound keys
+        if (change.table === "session_players") {
+          const { session_id, player_id } = change.payload;
+          const { error } = await supabase
+            .from(change.table)
+            .delete()
+            .eq("session_id", session_id as string)
+            .eq("player_id", player_id as string);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from(change.table)
+            .delete()
+            .eq("id", change.payload.id as string);
+          if (error) throw error;
+        }
       }
 
       if (change.id !== undefined) {

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Crown } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { PlayerForm } from "@/components/player-form";
+import { PlayerNewClient } from "@/components/player-new-client";
 import { getClubSubscription } from "@/lib/auth/gates";
 import { canAddPlayer } from "@/lib/subscription/restrictions";
 
@@ -62,10 +62,5 @@ export default async function NewPlayerPage({ params }: NewPlayerPageProps) {
     );
   }
 
-  return (
-    <div className="space-y-6 px-4 py-6 md:px-6">
-      <h1 className="text-3xl font-bold">Add Player</h1>
-      <PlayerForm clubId={club.id} clubSlug={clubSlug} />
-    </div>
-  );
+  return <PlayerNewClient clubId={club.id} clubSlug={clubSlug} />;
 }

@@ -32,7 +32,7 @@ type PlayerFormProps = {
   clubId: string;
   clubSlug: string;
   player?: Partial<Player> & { id?: string };
-  onSave?: () => Promise<void>;
+  onSave?: (playerId: string) => Promise<void>;
   /** Hide the built-in submit/cancel buttons (use formId to submit externally) */
   hideActions?: boolean;
   /** Stable form id so external buttons can target this form */
@@ -89,29 +89,39 @@ export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function
     }
     setSaving(true);
     setError(null);
+    let savedPlayerId = player?.id;
     if (isOnline) {
       const supabase = createClient();
-      const result = player?.id
-        ? await supabase.from("players").update(payload).eq("id", player?.id!)
-        : await supabase.from("players").insert({ ...payload, club_id: clubId });
-      if ((result as any)?.error) {
-        setError((result as any).error.message);
-        setSaving(false);
-        return;
+      if (player?.id) {
+        const result = await supabase.from("players").update(payload).eq("id", player.id);
+        if (result.error) {
+          setError(result.error.message);
+          setSaving(false);
+          return;
+        }
+      } else {
+        const result = await supabase.from("players").insert({ ...payload, club_id: clubId }).select("id").single();
+        if (result.error) {
+          setError(result.error.message);
+          setSaving(false);
+          return;
+        }
+        savedPlayerId = result.data.id;
       }
     } else {
       const db = await getDb();
       if (player?.id) {
-        await db.put("players", { id: player!.id, club_id: clubId, ...payload });
-        await enqueuePendingChange({ table: "players", operation: "update", payload: { id: player!.id, ...payload } } as any);
+        await db.put("players", { id: player.id, club_id: clubId, ...payload });
+        await enqueuePendingChange({ table: "players", operation: "update", payload: { id: player.id, ...payload } } as any);
       } else {
         const id = crypto.randomUUID();
+        savedPlayerId = id;
         await db.put("players", { id, club_id: clubId, ...payload });
         await enqueuePendingChange({ table: "players", operation: "insert", payload: { id, club_id: clubId, ...payload } } as any);
       }
     }
-    if (onSave) {
-      await onSave();
+    if (onSave && savedPlayerId) {
+      await onSave(savedPlayerId);
     }
     router.push(`/clubs/${clubSlug}/players`);
     router.refresh();

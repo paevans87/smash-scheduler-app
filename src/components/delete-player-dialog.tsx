@@ -37,6 +37,7 @@ export function DeletePlayerDialog({ playerId, playerName, onDeleted }: DeletePl
     if (isOnline) {
       const supabase = createClient();
       await supabase.from("players").delete().eq("id", playerId);
+      onDeleted?.();
       router.refresh();
     } else {
       const db = await getDb();

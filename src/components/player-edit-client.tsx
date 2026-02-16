@@ -129,15 +129,15 @@ export function PlayerEditClient({ clubId, clubSlug, playerId }: PlayerEditClien
     };
   }, [clubId, playerId, isOnline]);
 
-  const handleSaveBlacklist = useCallback(async () => {
+  const handleSaveBlacklist = useCallback(async (savedPlayerId: string) => {
     const changes = pendingBlacklistChanges;
     if (changes.adds.length === 0 && changes.removals.length === 0) return;
 
-    if (isOnline && player?.id) {
+    if (isOnline) {
       const supabase = createClient();
       for (const add of changes.adds) {
         await supabase.from("player_blacklists").insert({
-          player_id: player.id,
+          player_id: savedPlayerId,
           blacklisted_player_id: add.id,
           blacklist_type: add.type,
         });
@@ -145,12 +145,12 @@ export function PlayerEditClient({ clubId, clubSlug, playerId }: PlayerEditClien
       for (const rem of changes.removals) {
         await supabase.from("player_blacklists").delete().eq("id", rem);
       }
-    } else if (player?.id) {
+    } else {
       for (const add of changes.adds) {
         await enqueuePendingChange({
           table: "player_blacklists",
           operation: "insert",
-          payload: { player_id: player.id, blacklisted_player_id: add.id, blacklist_type: add.type },
+          payload: { player_id: savedPlayerId, blacklisted_player_id: add.id, blacklist_type: add.type },
         } as any);
       }
       for (const rem of changes.removals) {
@@ -163,7 +163,7 @@ export function PlayerEditClient({ clubId, clubSlug, playerId }: PlayerEditClien
     }
 
     setPendingBlacklistChanges({ adds: [], removals: [] });
-  }, [pendingBlacklistChanges, isOnline, player?.id]);
+  }, [pendingBlacklistChanges, isOnline]);
 
   if (isLoading) {
     return (

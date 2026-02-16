@@ -78,6 +78,18 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
           <UserPlus className="size-4" /> Add Player
         </Link>
       </div>
+      {planType === "free" && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950">
+          <Crown className="size-4 shrink-0 text-amber-500" />
+          <p className="text-amber-800 dark:text-amber-200">
+            You have {players.length} of 16 players on the free plan.{" "}
+            <Link href="/pricing" className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100">
+              Upgrade for unlimited players
+            </Link>
+          </p>
+        </div>
+      )}
+      {players.length > 0 && (
       <Card className="border rounded-lg bg-muted mb-4">
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-muted-foreground">Filters</CardTitle>
@@ -105,6 +117,7 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
           </div>
         </CardContent>
       </Card>
+      )}
 
       {isStale && (
         <p className="text-sm text-muted-foreground italic">Showing cached data — changes will sync when you are back online.</p>

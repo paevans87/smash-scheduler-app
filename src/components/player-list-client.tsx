@@ -6,6 +6,7 @@ import { usePlayers } from "@/lib/offline/use-players";
 import { PlayerCard } from "@/components/player-card";
 import { canAddPlayer } from "@/lib/subscription/restrictions";
 import type { PlanType } from "@/lib/subscription/hooks";
+import Link from "next/link";
 
 type PlayerListClientProps = {
   clubId: string;
@@ -25,10 +26,17 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
   const maxPlayers = planType === "pro" ? "unlimited" : "16";
 
   if (isLoading) {
+    // Nice loading state: centered, with a pleasant indicator
     return (
       <div className="space-y-6 px-4 py-6 md:px-6">
         <h1 className="text-3xl font-bold">Players</h1>
-        <p className="text-muted-foreground">Loading players...</p>
+        <div className="flex items-center justify-center py-6">
+          <span
+            aria-label="loading"
+            className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-amber-500 border-t-transparent"
+          />
+        </div>
+        <p className="text-muted-foreground text-center">Please wait while we load your players.</p>
       </div>
     );
   }
@@ -66,9 +74,17 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
       )}
 
       {players.length === 0 ? (
-        <p className="text-muted-foreground">
-          No players yet. Add your first player to get started.
-        </p>
+        <div className="rounded-lg border bg-muted p-6 text-center">
+          <p className="mb-2 text-sm text-muted-foreground">
+            you haven't setup any players yet, click here to add
+          </p>
+          <Link
+            href={`/clubs/${clubSlug}/players/new`}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+          >
+            Add Player
+          </Link>
+        </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {players.map((player) => (

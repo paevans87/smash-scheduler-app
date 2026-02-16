@@ -37,30 +37,37 @@ export function usePlayers(clubId: string): UsePlayersResult {
 
     async function load() {
       setIsLoading(true);
+      try {
+        if (isOnline) {
+          const supabase = createClient();
+          const { data } = await supabase
+            .from("players")
+            .select("id, club_id, name, skill_level, gender, play_style_preference")
+            .eq("club_id", clubId)
+            .order("name");
 
-      if (isOnline) {
-        const supabase = createClient();
-        const { data } = await supabase
-          .from("players")
-          .select("id, club_id, name, skill_level, gender, play_style_preference")
-          .eq("club_id", clubId)
-          .order("name");
-
-        if (!cancelled && data) {
-          setPlayers(data);
-          setIsStale(false);
-          await syncClubData(supabase, clubId);
+          if (!cancelled && data) {
+            setPlayers(data);
+            setIsStale(false);
+            await syncClubData(supabase, clubId);
+          }
+        } else {
+          const cached = await getPlayersFromCache(clubId);
+          if (!cancelled) {
+            setPlayers(cached);
+            setIsStale(true);
+          }
         }
-      } else {
-        const cached = await getPlayersFromCache(clubId);
+      } catch (e) {
+        // In case of fetch/cache error, ensure we don't stay in loading state indefinitely
         if (!cancelled) {
-          setPlayers(cached);
-          setIsStale(true);
+          setPlayers([]);
+          setIsStale(false);
         }
-      }
-
-      if (!cancelled) {
-        setIsLoading(false);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     }
 

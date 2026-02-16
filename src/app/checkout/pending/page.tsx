@@ -15,8 +15,7 @@ import { Button } from "@/components/ui/button";
 const POLL_INTERVAL = 2000;
 const TIMEOUT = 30000;
 
-type PendingState = "loading" | "error";
-type Subscription = { status: string };
+type Subscription = { status: string; plan_type?: string };
 
 function toArray(subs: Subscription | Subscription[] | null | undefined): Subscription[] {
   if (!subs) return [];
@@ -27,11 +26,17 @@ function PendingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
-  const [state, setState] = useState<PendingState>("loading");
+  const upgradeClubSlug = searchParams.get("upgrade");
+  const isUpgrade = !!upgradeClubSlug;
+  const [state, setState] = useState<"loading" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const fulfilledRef = useRef(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const successUrl = isUpgrade ? `/clubs/${upgradeClubSlug}` : "/clubs";
+  const fulfilUrl = isUpgrade ? "/api/checkout/upgrade/fulfil" : "/api/checkout/fulfil";
+  const backUrl = isUpgrade ? `/upgrade?club=${upgradeClubSlug}` : "/pricing";
 
   const cleanup = useCallback(() => {
     if (pollingRef.current) {
@@ -53,7 +58,7 @@ function PendingContent() {
 
     const supabase = createClient();
 
-    const checkClubExists = async () => {
+    const pollForCompletion = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -64,29 +69,52 @@ function PendingContent() {
         return;
       }
 
-      const { data } = await supabase
-        .from("club_organisers")
-        .select("club_id, clubs:club_id(id, subscriptions(status))")
-        .eq("user_id", user.id)
-        .limit(1);
+      if (isUpgrade) {
+        const { data: club } = await supabase
+          .from("clubs")
+          .select("id, subscriptions(status, plan_type)")
+          .eq("slug", upgradeClubSlug)
+          .single();
 
-      const club = data?.[0];
-      if (!club) return;
+        if (!club) return;
 
-      const rawSubs = (
-        club.clubs as unknown as {
-          id: string;
-          subscriptions: Subscription | Subscription[] | null;
+        const rawSubs = (
+          club as unknown as { id: string; subscriptions: Subscription | Subscription[] | null }
+        ).subscriptions;
+
+        const isNowPro = toArray(rawSubs).some(
+          (s) => (s.status === "active" || s.status === "trialling") && s.plan_type === "pro"
+        );
+
+        if (isNowPro) {
+          cleanup();
+          router.push(successUrl);
         }
-      )?.subscriptions;
+      } else {
+        const { data } = await supabase
+          .from("club_organisers")
+          .select("club_id, clubs:club_id(id, subscriptions(status))")
+          .eq("user_id", user.id)
+          .limit(1);
 
-      const hasActiveSubscription = toArray(rawSubs).some(
-        (s) => s.status === "active" || s.status === "trialling"
-      );
+        const club = data?.[0];
+        if (!club) return;
 
-      if (hasActiveSubscription) {
-        cleanup();
-        router.push("/clubs");
+        const rawSubs = (
+          club.clubs as unknown as {
+            id: string;
+            subscriptions: Subscription | Subscription[] | null;
+          }
+        )?.subscriptions;
+
+        const hasActiveSubscription = toArray(rawSubs).some(
+          (s) => s.status === "active" || s.status === "trialling"
+        );
+
+        if (hasActiveSubscription) {
+          cleanup();
+          router.push(successUrl);
+        }
       }
     };
 
@@ -95,7 +123,7 @@ function PendingContent() {
       fulfilledRef.current = true;
 
       try {
-        const response = await fetch("/api/checkout/fulfil", {
+        const response = await fetch(fulfilUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId }),
@@ -103,17 +131,17 @@ function PendingContent() {
 
         if (response.ok) {
           cleanup();
-          router.push("/clubs");
+          router.push(successUrl);
           return;
         }
       } catch {
-        // Fulfilment failed — polling will catch webhook-based creation
+        // Fulfilment failed — polling will catch webhook-based completion
       }
     };
 
     triggerFulfilment();
 
-    pollingRef.current = setInterval(checkClubExists, POLL_INTERVAL);
+    pollingRef.current = setInterval(pollForCompletion, POLL_INTERVAL);
 
     timeoutRef.current = setTimeout(() => {
       if (pollingRef.current) {
@@ -122,12 +150,14 @@ function PendingContent() {
       }
       setState("error");
       setErrorMessage(
-        "Setting up your club is taking longer than expected. Please try again or contact support."
+        isUpgrade
+          ? "Upgrading your club is taking longer than expected. Please try again or contact support."
+          : "Setting up your club is taking longer than expected. Please try again or contact support."
       );
     }, TIMEOUT);
 
     return cleanup;
-  }, [sessionId, router, cleanup]);
+  }, [sessionId, router, cleanup, isUpgrade, upgradeClubSlug, successUrl, fulfilUrl]);
 
   const handleRetry = () => {
     setState("loading");
@@ -142,7 +172,9 @@ function PendingContent() {
         <CardHeader className="text-center">
           <CardTitle>
             {state === "loading"
-              ? "Setting up your club..."
+              ? isUpgrade
+                ? "Upgrading your club..."
+                : "Setting up your club..."
               : "Something went wrong"}
           </CardTitle>
         </CardHeader>
@@ -162,10 +194,10 @@ function PendingContent() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => router.push("/pricing")}
+              onClick={() => router.push(backUrl)}
               className="w-full"
             >
-              Back to pricing
+              {isUpgrade ? "Back to upgrade" : "Back to pricing"}
             </Button>
           </CardFooter>
         )}

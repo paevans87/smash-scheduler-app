@@ -38,8 +38,7 @@ export async function checkSubscriptionGate(clubIds: string[]): Promise<void> {
   const { data: subscriptions } = await supabase
     .from("subscriptions")
     .select("id")
-    .in("club_id", clubIds)
-    .in("status", ["active", "trialling"]);
+    .in("club_id", clubIds);
 
   if (!subscriptions || subscriptions.length === 0) {
     redirect("/pricing");

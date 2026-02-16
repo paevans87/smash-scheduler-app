@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { Home, LogOut, Plus, Crown } from "lucide-react";
+import { Home, LogOut, Plus, Crown, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,8 +75,20 @@ export default async function ClubsPage() {
     )
   );
 
+  const lapsedClubs = clubs.filter((row) =>
+    toArray(row.clubs.subscriptions).some(
+      (s) => s.status === "cancelled" || s.status === "expired"
+    )
+  );
+
   const userHasPro = hasProSubscription(activeClubs);
   const canCreateMoreClubs = canCreateClub(activeClubs.length, userHasPro ? "pro" : "free");
+
+  const freeClub = activeClubs.find((row) =>
+    toArray(row.clubs.subscriptions).some(
+      (s) => (s.status === "active" || s.status === "trialling") && s.plan_type === "free"
+    )
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -142,12 +154,45 @@ export default async function ClubsPage() {
               </Link>
             );
           })}
+          {lapsedClubs.map((row) => {
+            const lapsedSub = toArray(row.clubs.subscriptions).find(
+              (s) => s.status === "cancelled" || s.status === "expired"
+            );
+
+            return (
+              <Link key={row.club_id} href={`/subscription-lapsed?club=${row.clubs.slug}`}>
+                <Card className="border-red-200 transition-colors hover:border-red-400 dark:border-red-900 dark:hover:border-red-700">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="size-4 text-red-500" />
+                      {row.clubs.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <span className="inline-block rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
+                      {lapsedSub?.status === "expired" ? "Payment failed" : "Cancelled"}
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
           {canCreateMoreClubs ? (
             <Link href="/pricing">
               <Card className="flex h-full min-h-[120px] items-center justify-center transition-colors hover:border-primary">
                 <CardContent className="flex flex-col items-center gap-2 py-6">
                   <Plus className="size-8 text-muted-foreground" />
                   <span className="font-medium text-muted-foreground">Create a Club</span>
+                </CardContent>
+              </Card>
+            </Link>
+          ) : freeClub ? (
+            <Link href={`/upgrade?club=${freeClub.clubs.slug}`}>
+              <Card className="flex h-full min-h-[120px] items-center justify-center border-dashed transition-colors hover:border-primary">
+                <CardContent className="flex flex-col items-center gap-2 py-6 text-muted-foreground">
+                  <Crown className="size-8" />
+                  <span className="font-medium">Upgrade to Pro</span>
+                  <span className="text-xs text-center">Create unlimited clubs</span>
                 </CardContent>
               </Card>
             </Link>

@@ -91,14 +91,14 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
             {canAddMore ? (
               <>
                 You have {players.length} of 16 players on the free plan.{" "}
-                <Link href="/pricing" className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100">
+                <Link href={`/upgrade?club=${clubSlug}`} className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100">
                   Upgrade for unlimited players
                 </Link>
               </>
             ) : (
               <>
                 You have reached your maximum number of players.{" "}
-                <Link href="/pricing" className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100">
+                <Link href={`/upgrade?club=${clubSlug}`} className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100">
                   Upgrade for unlimited players
                 </Link>
               </>

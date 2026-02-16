@@ -48,8 +48,14 @@ export default async function NewPlayerPage({ params }: NewPlayerPageProps) {
               <div>
                 <p className="font-medium">Player limit reached</p>
                 <p className="text-sm text-muted-foreground">
-                  You have reached the maximum of {maxPlayers} players for your plan.
-                  Upgrade to Pro for unlimited players.
+                  You have reached the maximum of {maxPlayers} players for your plan.{" "}
+                  <Link
+                    href={`/upgrade?club=${clubSlug}`}
+                    className="font-medium underline underline-offset-2"
+                  >
+                    Upgrade to Pro
+                  </Link>{" "}
+                  for unlimited players.
                 </p>
               </div>
               <Button asChild variant="outline">

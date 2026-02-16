@@ -47,14 +47,17 @@ export default async function ClubLayout({
 
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("id")
+    .select("id, status")
     .eq("club_id", club.id)
-    .in("status", ["active", "trialling"])
     .limit(1)
     .single();
 
   if (!subscription) {
     redirect("/clubs");
+  }
+
+  if (subscription.status === "cancelled" || subscription.status === "expired") {
+    redirect(`/subscription-lapsed?club=${clubSlug}`);
   }
 
   return (

@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/card";
 import { MatchMakingProfileList } from "./match-making-profile-list";
 import { ClubSettingsForm } from "./club-settings-form";
+import { SubscriptionCard } from "./subscription-card";
 import { getClubSubscription } from "@/lib/auth/gates";
 import { canUseCustomMatchmakingProfiles } from "@/lib/subscription/restrictions";
+import { fetchProPrices } from "@/lib/stripe-prices";
 
 type MatchMakingProfile = {
   id: string;
@@ -73,7 +75,7 @@ export default async function ClubManagementPage({
     redirect("/clubs");
   }
 
-  const [subscription, { data: clubProfiles }, { data: defaultProfiles }] = await Promise.all([
+  const [subscription, { data: clubProfiles }, { data: defaultProfiles }, { data: subRecord }] = await Promise.all([
     getClubSubscription(club.id),
     supabase
       .from("match_making_profiles")
@@ -85,6 +87,11 @@ export default async function ClubManagementPage({
       .select("*")
       .is("club_id", null)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("subscriptions")
+      .select("status, plan_type, current_period_end, stripe_subscription_id")
+      .eq("club_id", club.id)
+      .single(),
   ]);
 
   const profiles = [
@@ -94,6 +101,22 @@ export default async function ClubManagementPage({
 
   const planType = subscription?.planType ?? "free";
   const canCreateCustomProfiles = canUseCustomMatchmakingProfiles(planType);
+
+  let monthlyAmount: string | null = null;
+  if (planType === "pro") {
+    try {
+      const prices = await fetchProPrices();
+      const monthly = prices.find((p) => p.interval === "month");
+      if (monthly) {
+        monthlyAmount = new Intl.NumberFormat("en-GB", {
+          style: "currency",
+          currency: monthly.currency,
+        }).format(monthly.unitAmount / 100);
+      }
+    } catch {
+      // Price fetch failed — card will just omit the amount
+    }
+  }
 
   return (
     <div className="space-y-6 p-6">
@@ -156,7 +179,7 @@ export default async function ClubManagementPage({
             <p className="text-amber-800 dark:text-amber-200">
               Custom profiles are a Pro feature.{" "}
               <Link
-                href="/pricing"
+                href={`/upgrade?club=${clubSlug}`}
                 className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100"
               >
                 Upgrade to create your own profiles
@@ -171,6 +194,16 @@ export default async function ClubManagementPage({
           />
         </CardContent>
       </Card>
+
+      <SubscriptionCard
+        clubId={club.id}
+        clubSlug={clubSlug}
+        planType={(subRecord?.plan_type as "free" | "pro") ?? planType}
+        status={(subRecord?.status as "active" | "trialling" | "cancelled" | "expired") ?? "active"}
+        currentPeriodEnd={subRecord?.current_period_end ?? null}
+        monthlyAmount={monthlyAmount}
+        hasStripeSubscription={!!subRecord?.stripe_subscription_id}
+      />
     </div>
   );
 }

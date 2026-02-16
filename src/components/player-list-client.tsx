@@ -74,18 +74,35 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
     <div className="space-y-6 px-4 py-6 md:px-6">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold">Players</h1>
-        <Link href={`/clubs/${clubSlug}/players/new`} className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-[var(--shadow-md)]">
-          <UserPlus className="size-4" /> Add Player
-        </Link>
+        {canAddMore ? (
+          <Link href={`/clubs/${clubSlug}/players/new`} className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-[var(--shadow-md)]">
+            <UserPlus className="size-4" /> Add Player
+          </Link>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-muted px-4 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-50">
+            <UserPlus className="size-4" /> Add Player
+          </span>
+        )}
       </div>
       {planType === "free" && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950">
           <Crown className="size-4 shrink-0 text-amber-500" />
           <p className="text-amber-800 dark:text-amber-200">
-            You have {players.length} of 16 players on the free plan.{" "}
-            <Link href="/pricing" className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100">
-              Upgrade for unlimited players
-            </Link>
+            {canAddMore ? (
+              <>
+                You have {players.length} of 16 players on the free plan.{" "}
+                <Link href="/pricing" className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100">
+                  Upgrade for unlimited players
+                </Link>
+              </>
+            ) : (
+              <>
+                You have reached your maximum number of players.{" "}
+                <Link href="/pricing" className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100">
+                  Upgrade for unlimited players
+                </Link>
+              </>
+            )}
           </p>
         </div>
       )}
@@ -125,10 +142,14 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
 
       {filteredPlayers.length === 0 ? (
         <div className="rounded-lg border bg-muted p-6 text-center">
-          <p className="mb-2 text-sm text-muted-foreground">you haven't setup any players yet, click here to add</p>
-          <Link href={`/clubs/${clubSlug}/players/new`} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90">
-            Add Player
-          </Link>
+          <p className="mb-2 text-sm text-muted-foreground">
+            {canAddMore ? "You haven't set up any players yet, click here to add." : "You have reached your maximum number of players."}
+          </p>
+          {canAddMore && (
+            <Link href={`/clubs/${clubSlug}/players/new`} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90">
+              Add Player
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

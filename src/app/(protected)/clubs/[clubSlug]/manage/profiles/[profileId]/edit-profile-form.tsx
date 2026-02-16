@@ -102,6 +102,8 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
       router.push(`/clubs/${clubSlug}/manage`);
       router.refresh();
     } catch {
+      // error handled silently
+    } finally {
       setIsLoading(false);
     }
   }
@@ -119,6 +121,8 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
       router.push(`/clubs/${clubSlug}/manage`);
       router.refresh();
     } catch {
+      // error handled silently
+    } finally {
       setIsLoading(false);
     }
   }

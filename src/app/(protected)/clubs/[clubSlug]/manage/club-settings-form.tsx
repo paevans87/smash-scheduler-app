@@ -66,6 +66,8 @@ export function ClubSettingsForm({ club, clubSlug }: ClubSettingsFormProps) {
 
       router.refresh();
     } catch {
+      // error handled silently
+    } finally {
       setIsLoading(false);
     }
   }

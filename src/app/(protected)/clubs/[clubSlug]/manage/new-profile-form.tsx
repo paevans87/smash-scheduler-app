@@ -76,6 +76,8 @@ export function NewProfileForm({ clubId, clubSlug }: NewProfilePageProps) {
       router.push(`/clubs/${clubSlug}/manage`);
       router.refresh();
     } catch {
+      // error handled silently
+    } finally {
       setIsLoading(false);
     }
   }

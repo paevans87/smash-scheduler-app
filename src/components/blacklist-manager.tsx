@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -47,9 +48,10 @@ function BlacklistSection({
 }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
-
+  const [query, setQuery] = useState("");
   const blacklistedIds = new Set(entries.map((e) => e.blacklisted_player_id));
   const available = otherPlayers.filter((p) => !blacklistedIds.has(p.id));
+  const matched = available.filter((p) => (p.name ?? "").toLowerCase().includes(query.toLowerCase()));
 
   async function handleAdd(blacklistedPlayerId: string) {
     setAdding(true);
@@ -76,6 +78,36 @@ function BlacklistSection({
       {entries.length === 0 && (
         <p className="text-sm text-muted-foreground">None</p>
       )}
+
+      {/* Simple typeahead-like search for adding blacklist entries */}
+      <div className="space-y-2">
+        <Input
+          placeholder="Search players..."
+          value={query}
+          onChange={(e: any) => setQuery(e.target.value)}
+        />
+        {query.length > 0 && matched.length > 0 && (
+          <div className="border rounded-md p-2 bg-muted overflow-auto max-h-40">
+            {matched.map((p) => (
+              <div key={p.id} className="flex justify-between items-center py-1">
+                <span>{p.name}</span>
+                <button
+                  className="text-sm text-white bg-primary px-2 py-1 rounded"
+                  onClick={() => {
+                    handleAdd(p.id);
+                    setQuery("");
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {query.length > 0 && matched.length === 0 && (
+          <p className="text-sm text-muted-foreground">No results</p>
+        )}
+      </div>
 
       <div className="space-y-2">
         {entries.map((entry) => (

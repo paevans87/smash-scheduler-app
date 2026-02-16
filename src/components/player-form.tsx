@@ -18,9 +18,26 @@ import { useOnlineStatus } from "@/lib/offline/online-status-provider";
 import { enqueuePendingChange } from "@/lib/offline/pending-changes";
 import { getDb } from "@/lib/offline/db";
 
+// NOTE: The UI now separates the name into First Name and Last Name
+// The backend still uses a single name field, so we will compose it on save
+// and keep the local client state aligned with the existing offline store.
+function extractFirstName(full?: string) {
+  if (!full) return "";
+  const parts = full.trim().split(/\s+/);
+  return parts[0] ?? "";
+}
+
+function extractLastName(full?: string) {
+  if (!full) return "";
+  const parts = full.trim().split(/\s+/);
+  return parts.length > 1 ? parts.slice(1).join(" ") : "";
+}
+
 type Player = {
   id: string;
-  name: string;
+  first_name?: string;
+  last_name?: string | null;
+  name?: string; // backward-compat when present
   skill_level: number;
   gender: number;
   play_style_preference: number;
@@ -46,7 +63,9 @@ const playStyleOptions = [
 export function PlayerForm({ clubId, clubSlug, player }: PlayerFormProps) {
   const router = useRouter();
   const { isOnline } = useOnlineStatus();
-  const [name, setName] = useState(player?.name ?? "");
+  // Split the name into first and last names for the form
+  const [firstName, setFirstName] = useState<string>(player?.first_name ?? extractFirstName(player?.name ?? ""));
+  const [lastName, setLastName] = useState<string>(player?.last_name ?? extractLastName(player?.name ?? ""));
   const [skillLevel, setSkillLevel] = useState(player?.skill_level ?? 5);
   const [gender, setGender] = useState(String(player?.gender ?? 0));
   const [playStyle, setPlayStyle] = useState(String(player?.play_style_preference ?? 0));
@@ -56,7 +75,8 @@ export function PlayerForm({ clubId, clubSlug, player }: PlayerFormProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!name.trim()) {
+    const fullName = [firstName, lastName].filter((n) => n?.toString().trim() !== "").join(" ").trim();
+    if (!fullName) {
       setError("Name is required.");
       return;
     }
@@ -65,7 +85,9 @@ export function PlayerForm({ clubId, clubSlug, player }: PlayerFormProps) {
     setError(null);
 
     const payload = {
-      name: name.trim(),
+      first_name: firstName?.trim(),
+      last_name: (lastName?.trim() ?? null) as any,
+      name: fullName,
       skill_level: skillLevel,
       gender: Number(gender),
       play_style_preference: Number(playStyle),
@@ -73,15 +95,20 @@ export function PlayerForm({ clubId, clubSlug, player }: PlayerFormProps) {
 
     if (isOnline) {
       const supabase = createClient();
-      const result = player
+      let result: any;
+      result = player
         ? await supabase.from("players").update(payload).eq("id", player.id)
         : await supabase.from("players").insert({ ...payload, club_id: clubId });
 
-      if (result.error) {
+      if (result?.error) {
         setError(result.error.message);
         setSaving(false);
         return;
       }
+      // If creating a new player, we may want to redirect to the edit page
+      // to configure blacklist after creation. We can only do this if we
+      // have the new id from the insert response.
+      // After adding, stay on the listing page to ensure the UI reflects the new entry
     } else {
       const db = await getDb();
 
@@ -110,7 +137,6 @@ export function PlayerForm({ clubId, clubSlug, player }: PlayerFormProps) {
         });
       }
     }
-
     router.push(`/clubs/${clubSlug}/players`);
     router.refresh();
   }
@@ -121,15 +147,26 @@ export function PlayerForm({ clubId, clubSlug, player }: PlayerFormProps) {
         <p className="text-sm text-destructive">{error}</p>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Player name"
-          required
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="first-name">First Name</Label>
+          <Input
+            id="first-name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="First name"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="last-name">Last Name</Label>
+          <Input
+            id="last-name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            placeholder="Last name"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">

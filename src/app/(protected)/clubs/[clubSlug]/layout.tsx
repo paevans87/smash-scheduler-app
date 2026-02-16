@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { SideNav } from "@/components/side-nav";
 import { BottomNav } from "@/components/bottom-nav";
 import { ClubBreadcrumbs } from "@/components/club-breadcrumbs";
-import { Fab } from "@/components/fab";
 
 type ClubLayoutProps = {
   children: React.ReactNode;
@@ -68,7 +67,6 @@ export default async function ClubLayout({
         <main className="flex-1 pb-16 md:pb-0">{children}</main>
       </div>
       <BottomNav clubSlug={clubSlug} userEmail={user.email!} />
-      <Fab clubSlug={clubSlug} />
     </div>
   );
 }

@@ -8,7 +8,9 @@ import { getPlayersFromCache, syncClubData } from "./sync-service";
 type Player = {
   id: string;
   club_id: string;
-  name: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string; // derived for UI compatibility
   skill_level: number;
   gender: number;
   play_style_preference: number;
@@ -42,19 +44,33 @@ export function usePlayers(clubId: string): UsePlayersResult {
           const supabase = createClient();
           const { data } = await supabase
             .from("players")
-            .select("id, club_id, name, skill_level, gender, play_style_preference")
+            .select("id, club_id, first_name, last_name, name, skill_level, gender, play_style_preference")
             .eq("club_id", clubId)
             .order("name");
 
           if (!cancelled && data) {
-            setPlayers(data);
+            // Derive a stable UI name from first/last names when available
+            const enriched = data.map((p: any) => ({
+              ...p,
+              name: p.first_name && p.last_name
+                ? `${p.first_name} ${p.last_name}`
+                : p.name,
+            }));
+            setPlayers(enriched);
             setIsStale(false);
             await syncClubData(supabase, clubId);
           }
         } else {
           const cached = await getPlayersFromCache(clubId);
           if (!cancelled) {
-            setPlayers(cached);
+            // Cache may not include first/last; ensure name is derived when needed
+            const enriched = cached.map((p: any) => ({
+              ...p,
+              name: p.first_name && p.last_name
+                ? `${p.first_name} ${p.last_name}`
+                : p.name,
+            }));
+            setPlayers(enriched);
             setIsStale(true);
           }
         }

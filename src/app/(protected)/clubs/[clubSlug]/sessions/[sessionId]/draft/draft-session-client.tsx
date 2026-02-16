@@ -41,7 +41,9 @@ import {
 
 type Player = {
   id: string;
-  name: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
   skill_level: number;
   gender: number;
 };
@@ -117,9 +119,10 @@ export function DraftSessionClient({
     (player) => !sessionPlayerIds.has(player.id)
   );
   
-  const filteredAvailablePlayers = actuallyAvailablePlayers.filter((player) =>
-    player.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredAvailablePlayers = actuallyAvailablePlayers.filter((player) => {
+    const nm = (player.name ?? "").toLowerCase();
+    return nm.includes(searchText.toLowerCase());
+  });
 
   async function handleAddPlayer(playerId: string) {
     setIsLoading(true);
@@ -433,12 +436,12 @@ export function DraftSessionClient({
           <CardContent>
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
               {filteredAvailablePlayers.map((player) => (
-                <div
+                  <div
                   key={player.id}
                   className="flex items-center justify-between rounded-md border p-2"
                 >
                   <div>
-                    <p className="font-medium">{player.name}</p>
+                    <p className="font-medium">{player.name ?? `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim()}</p>
                     <p className="text-xs text-muted-foreground">
                       Skill: {player.skill_level}
                     </p>
@@ -481,7 +484,7 @@ export function DraftSessionClient({
                   >
                     <div>
                       <p className="font-medium">
-                        {sessionPlayer.players.name}
+                      {sessionPlayer.players.name ?? `${sessionPlayer.players.first_name ?? ''} ${sessionPlayer.players.last_name ?? ''}`.trim()}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Skill: {sessionPlayer.players.skill_level}

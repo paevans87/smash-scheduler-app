@@ -27,7 +27,9 @@ interface SmashSchedulerDB extends DBSchema {
     value: {
       id: string;
       club_id: string;
-      name: string;
+      first_name?: string;
+      last_name?: string;
+      name?: string;
       skill_level: number;
       gender: number;
       play_style_preference: number;

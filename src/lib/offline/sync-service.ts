@@ -20,7 +20,7 @@ export async function syncClubData(
       .eq("club_id", clubId),
     supabase
       .from("players")
-      .select("id, club_id, name, skill_level, gender, play_style_preference")
+      .select("id, club_id, first_name, last_name, name, skill_level, gender, play_style_preference")
       .eq("club_id", clubId),
     supabase
       .from("matches")
@@ -83,7 +83,14 @@ export async function syncClubData(
   if (players) {
     const store = tx.objectStore("players");
     for (const player of players) {
-      await store.put(player);
+      // Ensure a stable UI name is available for offline display
+      const displayName = player.first_name && player.last_name
+        ? `${player.first_name} ${player.last_name}`
+        : player.name;
+      await store.put({
+        ...player,
+        name: displayName,
+      } as any);
     }
   }
 

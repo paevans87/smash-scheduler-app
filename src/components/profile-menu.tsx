@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut, ArrowLeftRight } from "lucide-react";
+import { useTheme } from "next-themes";
+import { LogOut, ArrowLeftRight, Sun, Moon, Monitor } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -21,6 +22,7 @@ type ProfileMenuProps = {
 export function ProfileMenu({ userEmail, showEmail = false }: ProfileMenuProps) {
   const router = useRouter();
   const supabase = createClient();
+  const { setTheme, theme } = useTheme();
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -50,6 +52,22 @@ export function ProfileMenu({ userEmail, showEmail = false }: ProfileMenuProps) 
         <DropdownMenuLabel className="font-normal text-muted-foreground">
           {userEmail}
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => setTheme("light")}>
+          <Sun />
+          Light
+          {theme === "light" && <span className="ml-auto text-xs text-primary">✓</span>}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("dark")}>
+          <Moon />
+          Dark
+          {theme === "dark" && <span className="ml-auto text-xs text-primary">✓</span>}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setTheme("system")}>
+          <Monitor />
+          System
+          {theme === "system" && <span className="ml-auto text-xs text-primary">✓</span>}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/clubs")}>
           <ArrowLeftRight />

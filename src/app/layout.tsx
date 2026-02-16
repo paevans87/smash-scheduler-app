@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClientProviders } from "@/components/client-providers";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const roboto = Roboto({
@@ -31,11 +32,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${roboto.variable} antialiased`}>
-        <TooltipProvider>
-          <ClientProviders>{children}</ClientProviders>
-        </TooltipProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <TooltipProvider>
+            <ClientProviders>{children}</ClientProviders>
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

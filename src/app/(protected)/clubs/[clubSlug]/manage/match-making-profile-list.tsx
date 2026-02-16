@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 
 type MatchMakingProfile = {
   id: string;
+  club_id: string | null;
   name: string;
   weight_skill_balance: number;
   weight_time_off_court: number;
@@ -44,14 +45,13 @@ export function MatchMakingProfileList({
               <div className="space-y-1">
                 <h3 className="font-semibold">{profile.name}</h3>
                 <div className="flex flex-wrap gap-1">
+                  {profile.club_id === null ? (
+                    <Badge variant="outline">System</Badge>
+                  ) : (
+                    <Badge variant="outline">Custom</Badge>
+                  )}
                   {profile.is_default && (
                     <Badge variant="default">Default</Badge>
-                  )}
-                  {profile.apply_gender_matching && (
-                    <Badge variant="secondary">Gender Match</Badge>
-                  )}
-                  {profile.blacklist_mode === 1 && (
-                    <Badge variant="destructive">Strict Blacklist</Badge>
                   )}
                 </div>
               </div>
@@ -75,6 +75,20 @@ export function MatchMakingProfileList({
                 </span>
                 History
               </div>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span>
+                Gender Match:{" "}
+                <span className="font-medium text-foreground">
+                  {profile.apply_gender_matching ? "On" : "Off"}
+                </span>
+              </span>
+              <span>
+                Blacklist:{" "}
+                <span className="font-medium text-foreground">
+                  {profile.blacklist_mode === 1 ? "Strict" : "Preferred"}
+                </span>
+              </span>
             </div>
           </Card>
         </Link>

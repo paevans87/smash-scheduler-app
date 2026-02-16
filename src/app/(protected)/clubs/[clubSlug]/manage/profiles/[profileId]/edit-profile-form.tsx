@@ -33,10 +33,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { Crown, Trash2 } from "lucide-react";
+import Link from "next/link";
 
 type Profile = {
   id: string;
+  club_id: string | null;
   name: string;
   weight_skill_balance: number;
   weight_time_off_court: number;
@@ -50,12 +52,14 @@ type EditProfileFormProps = {
   profile: Profile;
   clubId: string;
   clubSlug: string;
+  canCreateCustomProfiles: boolean;
 };
 
-export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormProps) {
+export function EditProfileForm({ profile, clubId, clubSlug, canCreateCustomProfiles }: EditProfileFormProps) {
   const router = useRouter();
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
+  const isSystemDefault = profile.club_id === null;
 
   const [name, setName] = useState(profile.name);
   const [skillWeight, setSkillWeight] = useState(profile.weight_skill_balance);
@@ -129,6 +133,29 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
+      {isSystemDefault && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950">
+          <Crown className="size-4 shrink-0 text-amber-500" />
+          <p className="text-amber-800 dark:text-amber-200">
+            This is a system profile and cannot be changed.{" "}
+            {canCreateCustomProfiles ? (
+              <Link
+                href={`/clubs/${clubSlug}/manage/profiles/new`}
+                className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100"
+              >
+                Create your own profile
+              </Link>
+            ) : (
+              <Link
+                href="/pricing"
+                className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100"
+              >
+                Upgrade to Pro to create custom profiles
+              </Link>
+            )}
+          </p>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Profile Details</CardTitle>
@@ -143,6 +170,7 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Competitive, Social, Balanced"
               required
+              disabled={isSystemDefault}
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -150,6 +178,7 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
               id="isDefault"
               checked={isDefault}
               onCheckedChange={(checked: boolean | "indeterminate") => setIsDefault(checked === true)}
+              disabled={isSystemDefault}
             />
             <Label htmlFor="isDefault" className="font-normal">
               Set as default profile
@@ -177,6 +206,7 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
               min={0}
               max={100}
               step={1}
+              disabled={isSystemDefault}
             />
           </div>
 
@@ -191,6 +221,7 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
               min={0}
               max={100}
               step={1}
+              disabled={isSystemDefault}
             />
           </div>
 
@@ -205,6 +236,7 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
               min={0}
               max={100}
               step={1}
+              disabled={isSystemDefault}
             />
           </div>
 
@@ -238,6 +270,7 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
               onCheckedChange={(checked: boolean | "indeterminate") =>
                 setApplyGenderMatching(checked === true)
               }
+              disabled={isSystemDefault}
             />
             <div className="space-y-1">
               <Label htmlFor="genderMatching" className="font-normal">
@@ -252,7 +285,7 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
 
           <div className="space-y-2">
             <Label htmlFor="blacklistMode">Blacklist Mode</Label>
-            <Select value={blacklistMode} onValueChange={setBlacklistMode}>
+            <Select value={blacklistMode} onValueChange={setBlacklistMode} disabled={isSystemDefault}>
               <SelectTrigger id="blacklistMode">
                 <SelectValue />
               </SelectTrigger>
@@ -270,32 +303,36 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
       </Card>
 
       <div className="flex justify-between">
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button type="button" variant="outline" disabled={isLoading}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Profile
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Profile?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this profile? This action cannot
-                be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {!isSystemDefault ? (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button type="button" variant="outline" disabled={isLoading}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Profile
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Profile?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this profile? This action cannot
+                  be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          <div />
+        )}
 
         <div className="flex gap-4">
           <Button
@@ -304,11 +341,13 @@ export function EditProfileForm({ profile, clubId, clubSlug }: EditProfileFormPr
             onClick={() => router.push(`/clubs/${clubSlug}/manage`)}
             disabled={isLoading}
           >
-            Cancel
+            {isSystemDefault ? "Back" : "Cancel"}
           </Button>
-          <Button type="submit" disabled={!isValid || isLoading}>
-            {isLoading ? "Saving..." : "Save Changes"}
-          </Button>
+          {!isSystemDefault && (
+            <Button type="submit" disabled={!isValid || isLoading}>
+              {isLoading ? "Saving..." : "Save Changes"}
+            </Button>
+          )}
         </div>
       </div>
     </form>

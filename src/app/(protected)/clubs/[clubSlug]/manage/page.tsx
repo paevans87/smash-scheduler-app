@@ -17,6 +17,7 @@ import { canUseCustomMatchmakingProfiles } from "@/lib/subscription/restrictions
 
 type MatchMakingProfile = {
   id: string;
+  club_id: string | null;
   name: string;
   weight_skill_balance: number;
   weight_time_off_court: number;
@@ -72,14 +73,24 @@ export default async function ClubManagementPage({
     redirect("/clubs");
   }
 
-  const [subscription, { data: profiles }] = await Promise.all([
+  const [subscription, { data: clubProfiles }, { data: defaultProfiles }] = await Promise.all([
     getClubSubscription(club.id),
     supabase
       .from("match_making_profiles")
       .select("*")
       .eq("club_id", club.id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("match_making_profiles")
+      .select("*")
+      .is("club_id", null)
+      .order("created_at", { ascending: true }),
   ]);
+
+  const profiles = [
+    ...((defaultProfiles as MatchMakingProfile[]) ?? []),
+    ...((clubProfiles as MatchMakingProfile[]) ?? []),
+  ];
 
   const planType = subscription?.planType ?? "free";
   const canCreateCustomProfiles = canUseCustomMatchmakingProfiles(planType);
@@ -117,23 +128,45 @@ export default async function ClubManagementPage({
                 : "View default profiles or upgrade to Pro for custom profiles"}
             </CardDescription>
           </div>
-          {canCreateCustomProfiles ? (
-            <Button asChild>
-              <Link href={`/clubs/${clubSlug}/manage/profiles/new`}>
-                <Plus className="mr-2 size-4" />
-                New Profile
-              </Link>
+          <div className="flex items-center gap-3">
+            {!canCreateCustomProfiles && (
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Crown className="size-4 text-amber-500" />
+                <span className="text-sm">Pro feature</span>
+              </div>
+            )}
+            <Button asChild={canCreateCustomProfiles} disabled={!canCreateCustomProfiles}>
+              {canCreateCustomProfiles ? (
+                <Link href={`/clubs/${clubSlug}/manage/profiles/new`}>
+                  <Plus className="mr-2 size-4" />
+                  New Profile
+                </Link>
+              ) : (
+                <>
+                  <Plus className="mr-2 size-4" />
+                  New Profile
+                </>
+              )}
             </Button>
-          ) : (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Crown className="size-4 text-amber-500" />
-              <span className="text-sm">Pro feature</span>
-            </div>
-          )}
+          </div>
         </CardHeader>
+        {!canCreateCustomProfiles && (
+          <div className="mx-6 mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950">
+            <Crown className="size-4 shrink-0 text-amber-500" />
+            <p className="text-amber-800 dark:text-amber-200">
+              Custom profiles are a Pro feature.{" "}
+              <Link
+                href="/pricing"
+                className="font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100"
+              >
+                Upgrade to create your own profiles
+              </Link>
+            </p>
+          </div>
+        )}
         <CardContent>
           <MatchMakingProfileList
-            profiles={(profiles as MatchMakingProfile[]) ?? []}
+            profiles={profiles}
             clubSlug={clubSlug}
           />
         </CardContent>

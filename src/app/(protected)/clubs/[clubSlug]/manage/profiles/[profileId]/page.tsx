@@ -41,12 +41,24 @@ export default async function EditProfilePage({ params }: EditProfilePageProps) 
     redirect("/clubs");
   }
 
-  const { data: profile } = await supabase
+  // Fetch profile - check both club-specific and system default profiles
+  const { data: clubProfile } = await supabase
     .from("match_making_profiles")
     .select("*")
     .eq("id", profileId)
     .eq("club_id", club.id)
     .single();
+
+  const { data: systemProfile } = !clubProfile
+    ? await supabase
+        .from("match_making_profiles")
+        .select("*")
+        .eq("id", profileId)
+        .is("club_id", null)
+        .single()
+    : { data: null };
+
+  const profile = clubProfile ?? systemProfile;
 
   if (!profile) {
     redirect(`/clubs/${clubSlug}/manage`);
@@ -54,17 +66,26 @@ export default async function EditProfilePage({ params }: EditProfilePageProps) 
 
   const subscription = await getClubSubscription(club.id);
   const planType = subscription?.planType ?? "free";
+  const canCreateCustomProfiles = canUseCustomMatchmakingProfiles(planType);
 
-  if (!profile.is_default && !canUseCustomMatchmakingProfiles(planType)) {
+  // Custom profiles require Pro subscription
+  if (profile.club_id !== null && !profile.is_default && !canCreateCustomProfiles) {
     redirect(`/clubs/${clubSlug}/manage`);
   }
+
+  const isSystemDefault = profile.club_id === null;
 
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold tracking-tight mb-6">
-        Edit Match Making Profile
+        {isSystemDefault ? "View Match Making Profile" : "Edit Match Making Profile"}
       </h1>
-      <EditProfileForm profile={profile} clubId={club.id} clubSlug={clubSlug} />
+      <EditProfileForm
+        profile={profile}
+        clubId={club.id}
+        clubSlug={clubSlug}
+        canCreateCustomProfiles={canCreateCustomProfiles}
+      />
     </div>
   );
 }

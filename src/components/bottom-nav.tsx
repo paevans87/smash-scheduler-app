@@ -30,14 +30,14 @@ export function BottomNav({ clubSlug, userEmail }: BottomNavProps) {
     {
       label: "Sessions",
       icon: Calendar,
-      href: "#",
-      isActive: false,
+      href: `/clubs/${clubSlug}/sessions`,
+      isActive: pathname.startsWith(`/clubs/${clubSlug}/sessions`),
     },
     {
       label: "Club",
       icon: Settings,
-      href: "#",
-      isActive: false,
+      href: `/clubs/${clubSlug}/manage`,
+      isActive: pathname.startsWith(`/clubs/${clubSlug}/manage`),
     },
   ];
 

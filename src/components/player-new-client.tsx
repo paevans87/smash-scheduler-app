@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { enqueuePendingChange } from "@/lib/offline/pending-changes";
 import { createClient } from "@/lib/supabase/client";
-import { useOnlineStatus } from "@/lib/offline/online-status-provider";
 import { PlayerForm } from "@/components/player-form";
 import { BlacklistManager } from "@/components/blacklist-manager";
 import { Button } from "@/components/ui/button";
@@ -17,7 +15,6 @@ type PlayerNewClientProps = {
 const PLAYER_FORM_ID = "player-new-form";
 
 export function PlayerNewClient({ clubId, clubSlug }: PlayerNewClientProps) {
-  const { isOnline } = useOnlineStatus();
   const router = useRouter();
   const [otherPlayers, setOtherPlayers] = useState<{ id: string; name: string }[]>([]);
   const [pendingBlacklistChanges, setPendingBlacklistChanges] = useState<{
@@ -26,8 +23,6 @@ export function PlayerNewClient({ clubId, clubSlug }: PlayerNewClientProps) {
   }>({ adds: [], removals: [] });
 
   useEffect(() => {
-    if (!isOnline) return;
-
     async function loadPlayers() {
       const supabase = createClient();
       const { data } = await supabase
@@ -39,33 +34,23 @@ export function PlayerNewClient({ clubId, clubSlug }: PlayerNewClientProps) {
     }
 
     loadPlayers();
-  }, [clubId, isOnline]);
+  }, [clubId]);
 
   const handleSaveBlacklist = useCallback(async (savedPlayerId: string) => {
     const changes = pendingBlacklistChanges;
     if (changes.adds.length === 0) return;
 
-    if (isOnline) {
-      const supabase = createClient();
-      for (const add of changes.adds) {
-        await supabase.from("player_blacklists").insert({
-          player_id: savedPlayerId,
-          blacklisted_player_id: add.id,
-          blacklist_type: add.type,
-        });
-      }
-    } else {
-      for (const add of changes.adds) {
-        await enqueuePendingChange({
-          table: "player_blacklists",
-          operation: "insert",
-          payload: { player_id: savedPlayerId, blacklisted_player_id: add.id, blacklist_type: add.type },
-        });
-      }
+    const supabase = createClient();
+    for (const add of changes.adds) {
+      await supabase.from("player_blacklists").insert({
+        player_id: savedPlayerId,
+        blacklisted_player_id: add.id,
+        blacklist_type: add.type,
+      });
     }
 
     setPendingBlacklistChanges({ adds: [], removals: [] });
-  }, [pendingBlacklistChanges, isOnline]);
+  }, [pendingBlacklistChanges]);
 
   return (
     <div className="space-y-6 px-4 py-6 md:px-6">
@@ -77,7 +62,7 @@ export function PlayerNewClient({ clubId, clubSlug }: PlayerNewClientProps) {
         hideActions
         formId={PLAYER_FORM_ID}
       />
-      {isOnline && otherPlayers.length > 0 && (
+      {otherPlayers.length > 0 && (
         <BlacklistManager
           partnerBlacklist={[]}
           opponentBlacklist={[]}

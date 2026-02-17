@@ -14,9 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
-import { useOnlineStatus } from "@/lib/offline/online-status-provider";
-import { enqueuePendingChange } from "@/lib/offline/pending-changes";
-import { getDb } from "@/lib/offline/db";
 
 type Player = {
   id: string;
@@ -34,9 +31,7 @@ type PlayerFormProps = {
   clubSlug: string;
   player?: Partial<Player> & { id?: string };
   onSave?: (playerId: string) => Promise<void>;
-  /** Hide the built-in submit/cancel buttons (use formId to submit externally) */
   hideActions?: boolean;
-  /** Stable form id so external buttons can target this form */
   formId?: string;
 };
 
@@ -63,9 +58,7 @@ export type PlayerFormHandle = { getPayload: () => Record<string, unknown>; isSa
 
 export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function PlayerForm({ clubId, clubSlug, player, onSave, hideActions, formId }, ref) {
   const router = useRouter();
-  const { isOnline } = useOnlineStatus();
 
-  // Local state for First/Last name separation
   const [firstName, setFirstName] = useState<string>(player?.first_name ?? "");
   const [lastName, setLastName] = useState<string>(player?.last_name ?? "");
   const [skillLevel, setSkillLevel] = useState<number>(player?.skill_level ?? 5);
@@ -101,56 +94,43 @@ export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function
     const slug = generatePlayerSlug(firstName, lastName);
     const payloadWithSlug = { ...payload, slug };
 
-    if (isOnline) {
-      const supabase = createClient();
-      
-      // Check for duplicate name within the club
-      const fullName = `${payload.first_name} ${payload.last_name}`.trim().toLowerCase();
-      const { data: existingPlayers } = await supabase
-        .from("players")
-        .select("id, first_name, last_name")
-        .eq("club_id", clubId);
-      
-      const isDuplicate = existingPlayers?.some(p => {
-        if (player?.id && p.id === player.id) return false; // Skip current player when editing
-        const existingFullName = `${p.first_name} ${p.last_name}`.trim().toLowerCase();
-        return existingFullName === fullName;
-      });
-      
-      if (isDuplicate) {
-        setError("A player with this name already exists in this club.");
+    const supabase = createClient();
+    
+    const fullName = `${payload.first_name} ${payload.last_name}`.trim().toLowerCase();
+    const { data: existingPlayers } = await supabase
+      .from("players")
+      .select("id, first_name, last_name")
+      .eq("club_id", clubId);
+    
+    const isDuplicate = existingPlayers?.some(p => {
+      if (player?.id && p.id === player.id) return false;
+      const existingFullName = `${p.first_name} ${p.last_name}`.trim().toLowerCase();
+      return existingFullName === fullName;
+    });
+    
+    if (isDuplicate) {
+      setError("A player with this name already exists in this club.");
+      setSaving(false);
+      return;
+    }
+    
+    if (player?.id) {
+      const result = await supabase.from("players").update(payloadWithSlug).eq("id", player.id);
+      if (result.error) {
+        setError(result.error.message);
         setSaving(false);
         return;
       }
-      
-      if (player?.id) {
-        const result = await supabase.from("players").update(payloadWithSlug).eq("id", player.id);
-        if (result.error) {
-          setError(result.error.message);
-          setSaving(false);
-          return;
-        }
-      } else {
-        const result = await supabase.from("players").insert({ ...payloadWithSlug, club_id: clubId }).select("id").single();
-        if (result.error) {
-          setError(result.error.message);
-          setSaving(false);
-          return;
-        }
-        savedPlayerId = result.data.id;
-      }
     } else {
-      const db = await getDb();
-      if (player?.id) {
-        await db.put("players", { id: player.id, club_id: clubId, ...payloadWithSlug });
-        await enqueuePendingChange({ table: "players", operation: "update", payload: { id: player.id, ...payloadWithSlug } });
-      } else {
-        const id = crypto.randomUUID();
-        savedPlayerId = id;
-        await db.put("players", { id, club_id: clubId, ...payloadWithSlug });
-        await enqueuePendingChange({ table: "players", operation: "insert", payload: { id, club_id: clubId, ...payloadWithSlug } });
+      const result = await supabase.from("players").insert({ ...payloadWithSlug, club_id: clubId }).select("id").single();
+      if (result.error) {
+        setError(result.error.message);
+        setSaving(false);
+        return;
       }
+      savedPlayerId = result.data.id;
     }
+
     if (onSave && savedPlayerId) {
       await onSave(savedPlayerId);
     }

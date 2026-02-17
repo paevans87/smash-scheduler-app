@@ -16,9 +16,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { useOnlineStatus } from "@/lib/offline/online-status-provider";
-import { enqueuePendingChange } from "@/lib/offline/pending-changes";
-import { getDb } from "@/lib/offline/db";
 
 type DeletePlayerDialogProps = {
   playerId: string;
@@ -28,27 +25,15 @@ type DeletePlayerDialogProps = {
 
 export function DeletePlayerDialog({ playerId, playerName, onDeleted }: DeletePlayerDialogProps) {
   const router = useRouter();
-  const { isOnline } = useOnlineStatus();
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
     setDeleting(true);
 
-    if (isOnline) {
-      const supabase = createClient();
-      await supabase.from("players").delete().eq("id", playerId);
-      onDeleted?.();
-      router.refresh();
-    } else {
-      const db = await getDb();
-      await db.delete("players", playerId);
-      await enqueuePendingChange({
-        table: "players",
-        operation: "delete",
-        payload: { id: playerId },
-      });
-      onDeleted?.();
-    }
+    const supabase = createClient();
+    await supabase.from("players").delete().eq("id", playerId);
+    onDeleted?.();
+    router.refresh();
   }
 
   return (

@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { enqueuePendingChange } from "@/lib/offline/pending-changes";
 import { createClient } from "@/lib/supabase/client";
-import { useOnlineStatus } from "@/lib/offline/online-status-provider";
-import { getDb } from "@/lib/offline/db";
 import { PlayerForm } from "@/components/player-form";
 import { BlacklistManager } from "@/components/blacklist-manager";
 import { Button } from "@/components/ui/button";
@@ -36,7 +33,6 @@ type PlayerEditClientProps = {
 const PLAYER_FORM_ID = "player-edit-form";
 
 export function PlayerEditClient({ clubId, clubSlug, playerId }: PlayerEditClientProps) {
-  const { isOnline } = useOnlineStatus();
   const router = useRouter();
   const [player, setPlayer] = useState<Player | null>(null);
   const [partnerBlacklist, setPartnerBlacklist] = useState<BlacklistEntry[]>([]);
@@ -55,70 +51,55 @@ export function PlayerEditClient({ clubId, clubSlug, playerId }: PlayerEditClien
     async function load() {
       setIsLoading(true);
 
-      if (isOnline) {
-        const supabase = createClient();
-        const [{ data: playerData }, { data: blacklists }, { data: others }] = await Promise.all([
-          supabase
-            .from("players")
-            .select("id, first_name, last_name, name, skill_level, gender, play_style_preference")
-            .eq("id", playerId)
-            .eq("club_id", clubId)
-            .single(),
-          supabase
-            .from("player_blacklists")
-            .select("id, blacklisted_player_id, blacklist_type, blacklisted:blacklisted_player_id(name)")
-            .eq("player_id", playerId),
-          supabase
-            .from("players")
-            .select("id, name")
-            .eq("club_id", clubId)
-            .neq("id", playerId)
-            .order("name"),
-        ]);
+      const supabase = createClient();
+      const [{ data: playerData }, { data: blacklists }, { data: others }] = await Promise.all([
+        supabase
+          .from("players")
+          .select("id, first_name, last_name, name, skill_level, gender, play_style_preference")
+          .eq("id", playerId)
+          .eq("club_id", clubId)
+          .single(),
+        supabase
+          .from("player_blacklists")
+          .select("id, blacklisted_player_id, blacklist_type, blacklisted:blacklisted_player_id(name)")
+          .eq("player_id", playerId),
+        supabase
+          .from("players")
+          .select("id, name")
+          .eq("club_id", clubId)
+          .neq("id", playerId)
+          .order("name"),
+      ]);
 
-        if (cancelled) return;
+      if (cancelled) return;
 
-        if (!playerData) {
-          setNotFound(true);
-          setIsLoading(false);
-          return;
-        }
-
-        setPlayer(playerData);
-        setOtherPlayers(others ?? []);
-        setPartnerBlacklist(
-          (blacklists ?? [])
-            .filter((b) => b.blacklist_type === 0)
-            .map((b) => ({
-              id: b.id,
-              blacklisted_player_id: b.blacklisted_player_id,
-              blacklisted_player_name: (b.blacklisted as unknown as { name: string })?.name ?? "Unknown",
-            }))
-        );
-        setOpponentBlacklist(
-          (blacklists ?? [])
-            .filter((b) => b.blacklist_type === 1)
-            .map((b) => ({
-              id: b.id,
-              blacklisted_player_id: b.blacklisted_player_id,
-              blacklisted_player_name: (b.blacklisted as unknown as { name: string })?.name ?? "Unknown",
-            }))
-        );
-        setPendingBlacklistChanges({ adds: [], removals: [] });
-      } else {
-        const db = await getDb();
-        const cached = await db.get("players", playerId);
-
-        if (cancelled) return;
-
-        if (!cached || cached.club_id !== clubId) {
-          setNotFound(true);
-          setIsLoading(false);
-          return;
-        }
-
-        setPlayer(cached);
+      if (!playerData) {
+        setNotFound(true);
+        setIsLoading(false);
+        return;
       }
+
+      setPlayer(playerData);
+      setOtherPlayers(others ?? []);
+      setPartnerBlacklist(
+        (blacklists ?? [])
+          .filter((b) => b.blacklist_type === 0)
+          .map((b) => ({
+            id: b.id,
+            blacklisted_player_id: b.blacklisted_player_id,
+            blacklisted_player_name: (b.blacklisted as unknown as { name: string })?.name ?? "Unknown",
+          }))
+      );
+      setOpponentBlacklist(
+        (blacklists ?? [])
+          .filter((b) => b.blacklist_type === 1)
+          .map((b) => ({
+            id: b.id,
+            blacklisted_player_id: b.blacklisted_player_id,
+            blacklisted_player_name: (b.blacklisted as unknown as { name: string })?.name ?? "Unknown",
+          }))
+      );
+      setPendingBlacklistChanges({ adds: [], removals: [] });
 
       if (!cancelled) {
         setIsLoading(false);
@@ -130,43 +111,26 @@ export function PlayerEditClient({ clubId, clubSlug, playerId }: PlayerEditClien
     return () => {
       cancelled = true;
     };
-  }, [clubId, playerId, isOnline]);
+  }, [clubId, playerId]);
 
   const handleSaveBlacklist = useCallback(async (savedPlayerId: string) => {
     const changes = pendingBlacklistChanges;
     if (changes.adds.length === 0 && changes.removals.length === 0) return;
 
-    if (isOnline) {
-      const supabase = createClient();
-      for (const add of changes.adds) {
-        await supabase.from("player_blacklists").insert({
-          player_id: savedPlayerId,
-          blacklisted_player_id: add.id,
-          blacklist_type: add.type,
-        });
-      }
-      for (const rem of changes.removals) {
-        await supabase.from("player_blacklists").delete().eq("id", rem);
-      }
-    } else {
-      for (const add of changes.adds) {
-        await enqueuePendingChange({
-          table: "player_blacklists",
-          operation: "insert",
-          payload: { player_id: savedPlayerId, blacklisted_player_id: add.id, blacklist_type: add.type },
-        });
-      }
-      for (const rem of changes.removals) {
-        await enqueuePendingChange({
-          table: "player_blacklists",
-          operation: "delete",
-          payload: { id: rem },
-        });
-      }
+    const supabase = createClient();
+    for (const add of changes.adds) {
+      await supabase.from("player_blacklists").insert({
+        player_id: savedPlayerId,
+        blacklisted_player_id: add.id,
+        blacklist_type: add.type,
+      });
+    }
+    for (const rem of changes.removals) {
+      await supabase.from("player_blacklists").delete().eq("id", rem);
     }
 
     setPendingBlacklistChanges({ adds: [], removals: [] });
-  }, [pendingBlacklistChanges, isOnline]);
+  }, [pendingBlacklistChanges]);
 
   if (isLoading) {
     return (
@@ -197,18 +161,12 @@ export function PlayerEditClient({ clubId, clubSlug, playerId }: PlayerEditClien
         hideActions
         formId={PLAYER_FORM_ID}
       />
-      {isOnline ? (
-        <BlacklistManager
-          partnerBlacklist={partnerBlacklist}
-          opponentBlacklist={opponentBlacklist}
-          otherPlayers={otherPlayers}
-          onPendingChange={setPendingBlacklistChanges}
-        />
-      ) : (
-        <p className="text-sm text-muted-foreground italic">
-          Blacklist management is unavailable offline.
-        </p>
-      )}
+      <BlacklistManager
+        partnerBlacklist={partnerBlacklist}
+        opponentBlacklist={opponentBlacklist}
+        otherPlayers={otherPlayers}
+        onPendingChange={setPendingBlacklistChanges}
+      />
       <div className="flex gap-3">
         <Button type="submit" form={PLAYER_FORM_ID}>Update Player</Button>
         <Button type="button" variant="outline" onClick={() => router.push(`/clubs/${clubSlug}/players`)}>Cancel</Button>

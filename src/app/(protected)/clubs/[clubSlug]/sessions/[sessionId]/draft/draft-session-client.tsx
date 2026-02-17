@@ -31,13 +31,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Search, Plus, Minus, Trash2 } from "lucide-react";
-import { useOnlineStatus } from "@/lib/offline/online-status-provider";
-import { enqueuePendingChange } from "@/lib/offline/pending-changes";
-import {
-  cacheSessionPlayer,
-  removeSessionPlayerFromCache,
-  cacheSession,
-} from "@/lib/offline/sync-service";
 
 type Player = {
   id: string;
@@ -85,7 +78,6 @@ export function DraftSessionClient({
 }: DraftSessionClientProps) {
   const router = useRouter();
   const supabase = createClient();
-  const { isOnline } = useOnlineStatus();
   const [isLoading, setIsLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [courtCount, setCourtCount] = useState(session.court_count);
@@ -133,17 +125,8 @@ export function DraftSessionClient({
         is_active: true,
       };
 
-      if (isOnline) {
-        const { error } = await supabase.from("session_players").insert(sessionPlayerData);
-        if (error) throw error;
-      }
-
-      await cacheSessionPlayer(sessionPlayerData);
-      await enqueuePendingChange({
-        table: "session_players",
-        operation: "insert",
-        payload: sessionPlayerData,
-      });
+      const { error } = await supabase.from("session_players").insert(sessionPlayerData);
+      if (error) throw error;
 
       const player = availablePlayers.find((p) => p.id === playerId);
       if (player) {
@@ -162,22 +145,13 @@ export function DraftSessionClient({
   async function handleRemovePlayer(playerId: string) {
     setIsLoading(true);
     try {
-      if (isOnline) {
-        const { error } = await supabase
-          .from("session_players")
-          .delete()
-          .eq("session_id", sessionId)
-          .eq("player_id", playerId);
+      const { error } = await supabase
+        .from("session_players")
+        .delete()
+        .eq("session_id", sessionId)
+        .eq("player_id", playerId);
 
-        if (error) throw error;
-      }
-
-      await removeSessionPlayerFromCache(sessionId, playerId);
-      await enqueuePendingChange({
-        table: "session_players",
-        operation: "delete",
-        payload: { session_id: sessionId, player_id: playerId },
-      });
+      if (error) throw error;
 
       setCurrentSessionPlayers(
         currentSessionPlayers.filter((sp) => sp.player_id !== playerId)
@@ -194,26 +168,12 @@ export function DraftSessionClient({
     setCourtCount(newCount);
 
     try {
-      const updatedSession = {
-        ...session,
-        court_count: newCount,
-      };
+      const { error } = await supabase
+        .from("sessions")
+        .update({ court_count: newCount })
+        .eq("id", sessionId);
 
-      if (isOnline) {
-        const { error } = await supabase
-          .from("sessions")
-          .update({ court_count: newCount })
-          .eq("id", sessionId);
-
-        if (error) throw error;
-      }
-
-      await cacheSession(updatedSession);
-      await enqueuePendingChange({
-        table: "sessions",
-        operation: "update",
-        payload: { id: sessionId, court_count: newCount },
-      });
+      if (error) throw error;
     } catch {
       console.error("Failed to update court count");
     }
@@ -227,20 +187,18 @@ export function DraftSessionClient({
     setLabels(newLabels);
 
     try {
-      if (isOnline) {
-        if (label.trim()) {
-          await supabase.from("session_court_labels").upsert({
-            session_id: sessionId,
-            court_number: courtNumber,
-            label: label.trim(),
-          });
-        } else {
-          await supabase
-            .from("session_court_labels")
-            .delete()
-            .eq("session_id", sessionId)
-            .eq("court_number", courtNumber);
-        }
+      if (label.trim()) {
+        await supabase.from("session_court_labels").upsert({
+          session_id: sessionId,
+          court_number: courtNumber,
+          label: label.trim(),
+        });
+      } else {
+        await supabase
+          .from("session_court_labels")
+          .delete()
+          .eq("session_id", sessionId)
+          .eq("court_number", courtNumber);
       }
     } catch {
       console.error("Failed to update court label");
@@ -250,20 +208,12 @@ export function DraftSessionClient({
   async function handleAbandonDraft() {
     setIsLoading(true);
     try {
-      if (isOnline) {
-        const { error } = await supabase
-          .from("sessions")
-          .delete()
-          .eq("id", sessionId);
+      const { error } = await supabase
+        .from("sessions")
+        .delete()
+        .eq("id", sessionId);
 
-        if (error) throw error;
-      }
-
-      await enqueuePendingChange({
-        table: "sessions",
-        operation: "delete",
-        payload: { id: sessionId },
-      });
+      if (error) throw error;
 
       router.push(`/clubs/${clubSlug}/sessions`);
       router.refresh();
@@ -277,27 +227,12 @@ export function DraftSessionClient({
 
     setIsLoading(true);
     try {
-      const updatedSession = {
-        ...session,
-        court_count: courtCount,
-        state: 1,
-      };
+      const { error } = await supabase
+        .from("sessions")
+        .update({ state: 1, court_count: courtCount })
+        .eq("id", sessionId);
 
-      if (isOnline) {
-        const { error } = await supabase
-          .from("sessions")
-          .update({ state: 1, court_count: courtCount })
-          .eq("id", sessionId);
-
-        if (error) throw error;
-      }
-
-      await cacheSession(updatedSession);
-      await enqueuePendingChange({
-        table: "sessions",
-        operation: "update",
-        payload: { id: sessionId, state: 1, court_count: courtCount },
-      });
+      if (error) throw error;
 
       router.push(`/clubs/${clubSlug}/sessions/${sessionId}/active`);
       router.refresh();
@@ -323,11 +258,6 @@ export function DraftSessionClient({
               minute: "2-digit",
             })}
           </p>
-          {!isOnline && (
-            <p className="text-sm text-amber-600 mt-1">
-              You are offline. Changes will be synced when you are back online.
-            </p>
-          )}
         </div>
         <Badge variant="secondary">Draft</Badge>
       </div>

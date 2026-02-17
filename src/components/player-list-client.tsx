@@ -1,17 +1,87 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
-import { Crown, UserPlus } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { Crown, UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { usePlayers } from "@/lib/offline/use-players";
+import { createClient } from "@/lib/supabase/client";
 import { PlayerCard } from "@/components/player-card";
 import { canAddPlayer } from "@/lib/subscription/restrictions";
 import type { PlanType } from "@/lib/subscription/hooks";
+
+type Player = {
+  id: string;
+  club_id: string;
+  slug: string;
+  first_name: string;
+  last_name: string;
+  name?: string;
+  skill_level: number;
+  gender: number;
+  play_style_preference: number;
+};
+
+type UsePlayersResult = {
+  players: Player[];
+  isLoading: boolean;
+  mutate: () => void;
+};
+
+function usePlayers(clubId: string): UsePlayersResult {
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [revalidateKey, setRevalidateKey] = useState(0);
+
+  const mutate = useCallback(() => {
+    setRevalidateKey((k) => k + 1);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setIsLoading(true);
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("players")
+          .select("id, club_id, slug, first_name, last_name, name, skill_level, gender, play_style_preference")
+          .eq("club_id", clubId)
+          .order("name");
+
+        if (!cancelled && data) {
+          const enriched = data.map((p) => ({
+            ...p,
+            name: p.first_name && p.last_name
+              ? `${p.first_name} ${p.last_name}`
+              : p.name,
+          }));
+          setPlayers(enriched);
+        }
+      } catch {
+        if (!cancelled) {
+          setPlayers([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clubId, revalidateKey]);
+
+  return { players, isLoading, mutate };
+}
 
 type PlayerListClientProps = {
   clubId: string;
@@ -21,7 +91,7 @@ type PlayerListClientProps = {
 };
 
 export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: PlayerListClientProps) {
-  const { players, isLoading, isStale, mutate } = usePlayers(clubId);
+  const { players, isLoading, mutate } = usePlayers(clubId);
 
   const handleDeleted = useCallback(() => {
     mutate();
@@ -30,12 +100,10 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
   const canAddMore = canAddPlayer(playerCount, planType);
   const maxPlayers = planType === "pro" ? "unlimited" : "16";
 
-  // Simple filters state
   const [searchText, setSearchText] = useState<string>("");
   const [genderFilter, setGenderFilter] = useState<string>("any");
   const [minSkill, setMinSkill] = useState<number>(1);
 
-  // Derived filtered list
   const filteredPlayers = players.filter((p) => {
     const name = [p?.first_name, p?.last_name].filter(Boolean).length
       ? `${p?.first_name ?? ""} ${p?.last_name ?? ""}`.trim()
@@ -69,7 +137,6 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
     );
   }
 
-  // Main render
   return (
     <div className="space-y-6 px-4 py-6 md:px-6">
       <div className="flex items-center justify-between mb-2">
@@ -134,10 +201,6 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
           </div>
         </CardContent>
       </Card>
-      )}
-
-      {isStale && (
-        <p className="text-sm text-muted-foreground italic">Showing cached data — changes will sync when you are back online.</p>
       )}
 
       {filteredPlayers.length === 0 ? (

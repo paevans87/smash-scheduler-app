@@ -14,9 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useOnlineStatus } from "@/lib/offline/online-status-provider";
-import { enqueuePendingChange } from "@/lib/offline/pending-changes";
-import { cacheSession } from "@/lib/offline/sync-service";
 import { canScheduleSession } from "@/lib/subscription/restrictions";
 import type { PlanType } from "@/lib/subscription/hooks";
 
@@ -44,7 +41,6 @@ export function NewSessionForm({
 }: NewSessionPageProps) {
   const router = useRouter();
   const supabase = createClient();
-  const { isOnline } = useOnlineStatus();
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -97,17 +93,8 @@ export function NewSessionForm({
         slug,
       };
 
-      if (isOnline) {
-        const { error } = await supabase.from("sessions").insert(sessionData);
-        if (error) throw error;
-      }
-
-      await cacheSession(sessionData);
-      await enqueuePendingChange({
-        table: "sessions",
-        operation: "insert",
-        payload: sessionData,
-      });
+      const { error } = await supabase.from("sessions").insert(sessionData);
+      if (error) throw error;
 
       router.push(`/clubs/${clubSlug}/sessions/${sessionId}/draft`);
       router.refresh();
@@ -129,11 +116,6 @@ export function NewSessionForm({
               Schedule up to {maxScheduleDays} in advance
               {planType === "free" && <Crown className="inline size-3 ml-1 text-amber-500" />}
             </span>
-            {!isOnline && (
-              <span className="block mt-2 text-amber-600">
-                You are offline. The session will be created locally and synced when you are back online.
-              </span>
-            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

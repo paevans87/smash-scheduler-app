@@ -144,7 +144,7 @@ export default function LoginPage() {
               Schedule Badminton Sessions Effortlessly
             </h2>
             <p className="text-primary-foreground/80 text-lg">
-              Join hundreds of clubs already using our intelligent matchmaking and offline-first scheduling.
+              Join hundreds of clubs already using our intelligent matchmaking and session scheduling.
             </p>
           </div>
 
@@ -172,8 +172,8 @@ export default function LoginPage() {
                 <Sparkles className="size-5 text-white" />
               </div>
               <div>
-                <p className="font-semibold text-white">Works Offline</p>
-                <p className="text-sm text-primary-foreground/70">Syncs when back online</p>
+                <p className="font-semibold text-white">Smart Matchmaking</p>
+                <p className="text-sm text-primary-foreground/70">Fair & balanced games</p>
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 # SmashScheduler - AI Agent Reference
 
 ## Project Overview
-Badminton club session scheduling app with offline support, built with Next.js 15+, Supabase, and shadcn/ui.
+Badminton club session scheduling app built with Next.js 15+, Supabase, and shadcn/ui.
 
 ## Core Constraints
 - **UK English spelling** (optimise, colour, centre)
@@ -78,39 +78,6 @@ USING (club_id IN (SELECT club_id FROM club_organisers WHERE user_id = auth.uid(
 | Branding | ❌ | Logo + Colours |
 
 **Implementation**: Check `src/lib/subscription/restrictions.ts`
-
-## Offline-First Architecture
-
-### How It Works
-1. **Online**: Fetch from Supabase → cache to IndexedDB → display
-2. **Offline**: Read from IndexedDB cache → display stale indicator
-3. **Changes**: Save to Supabase (if online) → cache locally → queue for sync
-4. **Back Online**: Auto-sync pending changes from queue
-
-### Key Files
-- `src/lib/offline/db.ts` - IndexedDB schema
-- `src/lib/offline/sync-service.ts` - Cache read/write
-- `src/lib/offline/sync-reconciler.ts` - Sync pending changes
-- `src/lib/offline/pending-changes.ts` - Queue management
-- `src/lib/offline/use-sessions.ts` - Hook pattern
-- `src/lib/offline/use-players.ts` - Hook pattern
-
-### Pattern for Offline Components
-```typescript
-const { isOnline } = useOnlineStatus();
-
-async function handleSave(data) {
-  if (isOnline) {
-    await supabase.from("table").insert(data);
-  }
-  await cacheData(data);
-  await enqueuePendingChange({
-    table: "table",
-    operation: "insert",
-    payload: data,
-  });
-}
-```
 
 ## Component Patterns
 
@@ -192,13 +159,6 @@ npm run test     # Vitest tests
 npm run lint     # ESLint
 ```
 
-### Testing Offline
-1. DevTools → Network → Check "Offline"
-2. Refresh page
-3. Make changes
-4. Uncheck "Offline"
-5. Changes auto-sync
-
 ## Key Files Reference
 
 | Purpose | File |
@@ -207,19 +167,12 @@ npm run lint     # ESLint
 | Subscription checks | `src/lib/subscription/restrictions.ts` |
 | Server Supabase client | `src/lib/supabase/server.ts` |
 | Browser Supabase client | `src/lib/supabase/client.ts` |
-| Offline hooks | `src/lib/offline/use-sessions.ts`, `use-players.ts` |
 | Side navigation | `src/components/side-nav.tsx` |
 | Protected layout | `src/app/(protected)/layout.tsx` |
 | Club layout | `src/app/(protected)/clubs/[clubSlug]/layout.tsx` |
 | Middleware | `src/middleware.ts` |
 
 ## Common Tasks
-
-### Add offline support for new feature
-1. Add to IndexedDB schema in `db.ts`
-2. Add cache functions in `sync-service.ts`
-3. Create hook following `use-sessions.ts` pattern
-4. Queue changes in components
 
 ### Add paywall restriction
 1. Add to `src/lib/subscription/restrictions.ts`

@@ -10,7 +10,64 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useSessions } from "@/lib/offline/use-sessions";
+import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect, useCallback } from "react";
+
+type Session = {
+  id: string;
+  club_id: string;
+  slug: string;
+  scheduled_date_time: string;
+  court_count: number;
+  state: number;
+};
+
+type UseSessionsResult = {
+  sessions: Session[];
+  isLoading: boolean;
+  mutate: () => void;
+};
+
+function useSessions(clubId: string): UseSessionsResult {
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [revalidateKey, setRevalidateKey] = useState(0);
+
+  const mutate = useCallback(() => {
+    setRevalidateKey((k) => k + 1);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setIsLoading(true);
+
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("sessions")
+        .select("id, club_id, slug, scheduled_date_time, court_count, state")
+        .eq("club_id", clubId)
+        .order("scheduled_date_time", { ascending: false });
+
+      if (!cancelled && data) {
+        setSessions(data);
+      }
+
+      if (!cancelled) {
+        setIsLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [clubId, revalidateKey]);
+
+  return { sessions, isLoading, mutate };
+}
 
 type SessionsListProps = {
   clubSlug: string;
@@ -44,7 +101,7 @@ function getStateLabel(state: number) {
 }
 
 export function SessionsList({ clubSlug, clubId }: SessionsListProps) {
-  const { sessions, isLoading, isStale } = useSessions(clubId);
+  const { sessions, isLoading } = useSessions(clubId);
 
   if (isLoading) {
     return (
@@ -67,11 +124,6 @@ export function SessionsList({ clubSlug, clubId }: SessionsListProps) {
           <h1 className="text-3xl font-bold tracking-tight">Sessions</h1>
           <p className="text-muted-foreground">
             Manage your club sessions
-            {isStale && (
-              <span className="ml-2 text-amber-600">
-                (Showing cached data — changes will sync when you are back online)
-              </span>
-            )}
           </p>
         </div>
         <Button asChild>

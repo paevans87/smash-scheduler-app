@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getDb, seedSession, seedSessionPlayers, seedCourtLabels } from "@/lib/db/index";
+import { enqueueMutation, processQueue } from "@/lib/db/sync";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -103,6 +105,22 @@ export function DraftSessionClient({
     setCurrentSessionPlayers(sessionPlayers);
   }, [sessionPlayers]);
 
+  // Seed IndexedDB on mount so mutations can work offline
+  useEffect(() => {
+    seedSession({
+      id: session.id,
+      club_id: "",
+      scheduled_date_time: session.scheduled_date_time,
+      court_count: session.court_count,
+      state: session.state,
+    });
+    seedSessionPlayers(
+      sessionId,
+      sessionPlayers.map((sp) => ({ player_id: sp.player_id, is_active: sp.is_active }))
+    );
+    seedCourtLabels(sessionId, courtLabels);
+  }, [session, sessionId, sessionPlayers, courtLabels]);
+
   const scheduledDate = new Date(session.scheduled_date_time);
 
   const minPlayers = gameType === 0 ? 2 : 4;
@@ -115,11 +133,11 @@ export function DraftSessionClient({
   const canCreateSession = activePlayerCount >= minPlayers;
 
   const sessionPlayerIds = new Set(currentSessionPlayers.map((sp) => sp.player_id));
-  
+
   const actuallyAvailablePlayers = availablePlayers.filter(
     (player) => !sessionPlayerIds.has(player.id)
   );
-  
+
   const filteredAvailablePlayers = actuallyAvailablePlayers.filter((player) => {
     const nm = (player.name ?? "").toLowerCase();
     return nm.includes(searchText.toLowerCase());
@@ -128,15 +146,25 @@ export function DraftSessionClient({
   async function handleAddPlayer(playerId: string) {
     setIsLoading(true);
     try {
-      const sessionPlayerData = {
+      // Write to IDB
+      const db = await getDb();
+      await db.put("session_players", {
         session_id: sessionId,
         player_id: playerId,
         is_active: true,
-      };
+      });
 
-      const { error } = await supabase.from("session_players").insert(sessionPlayerData);
-      if (error) throw error;
+      // Queue sync (upsert is idempotent if re-sent)
+      await enqueueMutation("session_players", "upsert", {
+        session_id: sessionId,
+        player_id: playerId,
+        is_active: true,
+      });
 
+      // Attempt immediate sync (silently fails if offline)
+      processQueue(supabase).catch(() => {});
+
+      // Optimistic UI update
       const player = availablePlayers.find((p) => p.id === playerId);
       if (player) {
         setCurrentSessionPlayers([
@@ -154,13 +182,17 @@ export function DraftSessionClient({
   async function handleRemovePlayer(playerId: string) {
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from("session_players")
-        .delete()
-        .eq("session_id", sessionId)
-        .eq("player_id", playerId);
+      // Write to IDB
+      const db = await getDb();
+      await db.delete("session_players", [sessionId, playerId]);
 
-      if (error) throw error;
+      // Queue sync
+      await enqueueMutation("session_players", "delete", undefined, {
+        session_id: sessionId,
+        player_id: playerId,
+      });
+
+      processQueue(supabase).catch(() => {});
 
       setCurrentSessionPlayers(
         currentSessionPlayers.filter((sp) => sp.player_id !== playerId)
@@ -177,12 +209,20 @@ export function DraftSessionClient({
     setCourtCount(newCount);
 
     try {
-      const { error } = await supabase
-        .from("sessions")
-        .update({ court_count: newCount })
-        .eq("id", sessionId);
+      const db = await getDb();
+      const existing = await db.get("sessions", sessionId);
+      if (existing) {
+        await db.put("sessions", { ...existing, court_count: newCount });
+      }
 
-      if (error) throw error;
+      await enqueueMutation(
+        "sessions",
+        "update",
+        { court_count: newCount },
+        { id: sessionId }
+      );
+
+      processQueue(supabase).catch(() => {});
     } catch {
       console.error("Failed to update court count");
     }
@@ -196,19 +236,28 @@ export function DraftSessionClient({
     setLabels(newLabels);
 
     try {
+      const db = await getDb();
+
       if (label.trim()) {
-        await supabase.from("session_court_labels").upsert({
+        await db.put("session_court_labels", {
+          session_id: sessionId,
+          court_number: courtNumber,
+          label: label.trim(),
+        });
+        await enqueueMutation("session_court_labels", "upsert", {
           session_id: sessionId,
           court_number: courtNumber,
           label: label.trim(),
         });
       } else {
-        await supabase
-          .from("session_court_labels")
-          .delete()
-          .eq("session_id", sessionId)
-          .eq("court_number", courtNumber);
+        await db.delete("session_court_labels", [sessionId, courtNumber]);
+        await enqueueMutation("session_court_labels", "delete", undefined, {
+          session_id: sessionId,
+          court_number: courtNumber,
+        });
       }
+
+      processQueue(supabase).catch(() => {});
     } catch {
       console.error("Failed to update court label");
     }
@@ -217,12 +266,14 @@ export function DraftSessionClient({
   async function handleAbandonDraft() {
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from("sessions")
-        .delete()
-        .eq("id", sessionId);
+      // Remove from IDB
+      const db = await getDb();
+      await db.delete("sessions", sessionId);
 
-      if (error) throw error;
+      await enqueueMutation("sessions", "delete", undefined, { id: sessionId });
+
+      // Abandon requires online (navigates to server-rendered sessions list)
+      await processQueue(supabase);
 
       router.push(`/clubs/${clubSlug}/sessions`);
       router.refresh();
@@ -236,12 +287,22 @@ export function DraftSessionClient({
 
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from("sessions")
-        .update({ state: 1, court_count: courtCount })
-        .eq("id", sessionId);
+      // Write state change to IDB
+      const db = await getDb();
+      const existing = await db.get("sessions", sessionId);
+      if (existing) {
+        await db.put("sessions", { ...existing, state: 1, court_count: courtCount });
+      }
 
-      if (error) throw error;
+      await enqueueMutation(
+        "sessions",
+        "update",
+        { state: 1, court_count: courtCount },
+        { id: sessionId }
+      );
+
+      // Activating the session requires online (navigates to server-rendered active page)
+      await processQueue(supabase);
 
       router.push(`/clubs/${clubSlug}/sessions/${sessionId}/active`);
       router.refresh();
@@ -372,10 +433,10 @@ export function DraftSessionClient({
               />
             </div>
           </CardHeader>
-            <CardContent>
+          <CardContent>
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
               {filteredAvailablePlayers.map((player) => (
-                  <div
+                <div
                   key={player.id}
                   className="flex items-center justify-between rounded-md border p-2"
                 >

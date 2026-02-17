@@ -24,11 +24,6 @@ type NewSessionPageProps = {
   planType: PlanType;
 };
 
-function generateSessionSlug(date: Date, suffix: number = 0): string {
-  const base = date.toISOString().split('T')[0];
-  return suffix === 0 ? base : `${base}-${suffix}`;
-}
-
 function generateUUID(): string {
   return crypto.randomUUID();
 }
@@ -82,7 +77,6 @@ export function NewSessionForm({
       scheduledDateTime.setHours(hours, minutes, 0, 0);
 
       const sessionId = generateUUID();
-      const slug = generateSessionSlug(scheduledDateTime);
 
       const sessionData = {
         id: sessionId,
@@ -90,7 +84,6 @@ export function NewSessionForm({
         scheduled_date_time: scheduledDateTime.toISOString(),
         court_count: courtCount,
         state: 0,
-        slug,
       };
 
       const { error } = await supabase.from("sessions").insert(sessionData);

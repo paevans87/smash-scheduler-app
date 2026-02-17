@@ -1,0 +1,3 @@
+ALTER TABLE sessions DROP CONSTRAINT IF EXISTS uq_sessions_club_slug;
+ALTER TABLE sessions DROP COLUMN IF EXISTS slug;
+DROP FUNCTION IF EXISTS generate_session_slug(UUID, TIMESTAMPTZ);

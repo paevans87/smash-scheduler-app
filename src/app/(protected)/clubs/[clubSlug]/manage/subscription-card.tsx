@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Crown, CreditCard, ExternalLink, AlertTriangle, XCircle } from "lucide-react";
+import { Crown, CreditCard, ExternalLink, AlertTriangle, XCircle, Clock } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -23,6 +23,7 @@ type SubscriptionCardProps = {
   currentPeriodEnd: string | null;
   monthlyAmount: string | null;
   hasStripeSubscription: boolean;
+  cancelAtPeriodEnd: boolean;
 };
 
 export function SubscriptionCard({
@@ -33,6 +34,7 @@ export function SubscriptionCard({
   currentPeriodEnd,
   monthlyAmount,
   hasStripeSubscription,
+  cancelAtPeriodEnd,
 }: SubscriptionCardProps) {
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState("");
@@ -42,6 +44,7 @@ export function SubscriptionCard({
   const isCancelled = status === "cancelled";
   const isExpired = status === "expired";
   const isInactive = isCancelled || isExpired;
+  const isCancellationPending = !isInactive && cancelAtPeriodEnd;
 
   const formattedDate = currentPeriodEnd
     ? new Date(currentPeriodEnd).toLocaleDateString("en-GB", {
@@ -112,12 +115,30 @@ export function SubscriptionCard({
         <CardDescription>
           {isInactive
             ? "Your Pro subscription is no longer active"
-            : isTrial
-              ? "Pro Trial plan"
-              : "Pro plan"}
+            : isCancellationPending
+              ? "Your Pro subscription has been cancelled"
+              : isTrial
+                ? "Pro Trial plan"
+                : "Pro plan"}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        {isCancellationPending && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950">
+            <Clock className="mt-0.5 size-4 shrink-0 text-amber-500" />
+            <div>
+              <p className="font-medium text-amber-800 dark:text-amber-200">
+                Cancellation pending
+              </p>
+              <p className="text-amber-700 dark:text-amber-300">
+                Your subscription has been cancelled. You&apos;ll retain Pro
+                access until {formattedDate ?? "the end of your billing period"},
+                after which your club will be downgraded to the Free plan.
+              </p>
+            </div>
+          </div>
+        )}
+
         {isCancelled && (
           <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm dark:border-red-900 dark:bg-red-950">
             <XCircle className="mt-0.5 size-4 shrink-0 text-red-500" />
@@ -152,10 +173,13 @@ export function SubscriptionCard({
 
           <dt className="text-muted-foreground">Status</dt>
           <dd className="font-medium">
-            {status === "active" && (
+            {isCancellationPending && (
+              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">Cancelling</span>
+            )}
+            {!isCancellationPending && status === "active" && (
               <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">Active</span>
             )}
-            {status === "trialling" && (
+            {!isCancellationPending && status === "trialling" && (
               <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">Trial</span>
             )}
             {status === "cancelled" && (
@@ -166,7 +190,7 @@ export function SubscriptionCard({
             )}
           </dd>
 
-          {monthlyAmount && !isInactive && (
+          {monthlyAmount && !isInactive && !isCancellationPending && (
             <>
               <dt className="text-muted-foreground">Amount</dt>
               <dd className="font-medium">{monthlyAmount}/mo</dd>
@@ -178,9 +202,11 @@ export function SubscriptionCard({
               <dt className="text-muted-foreground">
                 {isInactive
                   ? "Ended"
-                  : isTrial
-                    ? "Trial ends"
-                    : "Next billing date"}
+                  : isCancellationPending
+                    ? "Pro access until"
+                    : isTrial
+                      ? "Trial ends"
+                      : "Next billing date"}
               </dt>
               <dd className="font-medium">{formattedDate}</dd>
             </>
@@ -203,7 +229,7 @@ export function SubscriptionCard({
             </Button>
           )}
 
-          {hasStripeSubscription && !isInactive && (
+          {hasStripeSubscription && !isInactive && !isCancellationPending && (
             <Button
               variant="outline"
               onClick={handleManageBilling}
@@ -215,7 +241,19 @@ export function SubscriptionCard({
             </Button>
           )}
 
-          {isCancelled && (
+          {(isCancelled || isCancellationPending) && hasStripeSubscription && (
+            <Button
+              variant={isCancellationPending ? "outline" : undefined}
+              onClick={handleManageBilling}
+              disabled={portalLoading}
+            >
+              <Crown className="mr-2 size-4" />
+              {portalLoading ? "Opening\u2026" : "Resubscribe to Pro"}
+              {!portalLoading && <ExternalLink className="ml-2 size-3" />}
+            </Button>
+          )}
+
+          {isCancelled && !hasStripeSubscription && (
             <Button asChild>
               <Link href={`/upgrade?club=${clubSlug}`}>
                 <Crown className="mr-2 size-4" />

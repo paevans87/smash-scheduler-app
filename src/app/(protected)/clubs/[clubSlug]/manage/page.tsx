@@ -13,6 +13,7 @@ import {
 import { MatchMakingProfileList } from "./match-making-profile-list";
 import { ClubSettingsForm } from "./club-settings-form";
 import { SubscriptionCard } from "./subscription-card";
+import { DeleteClubSection } from "./delete-club-section";
 import { getClubSubscription } from "@/lib/auth/gates";
 import { canUseCustomMatchmakingProfiles } from "@/lib/subscription/restrictions";
 import { fetchProPrices } from "@/lib/stripe-prices";
@@ -89,7 +90,7 @@ export default async function ClubManagementPage({
       .order("created_at", { ascending: true }),
     supabase
       .from("subscriptions")
-      .select("status, plan_type, current_period_end, stripe_subscription_id")
+      .select("status, plan_type, current_period_end, stripe_subscription_id, cancel_at_period_end")
       .eq("club_id", club.id)
       .single(),
   ]);
@@ -203,6 +204,17 @@ export default async function ClubManagementPage({
         currentPeriodEnd={subRecord?.current_period_end ?? null}
         monthlyAmount={monthlyAmount}
         hasStripeSubscription={!!subRecord?.stripe_subscription_id}
+        cancelAtPeriodEnd={subRecord?.cancel_at_period_end ?? false}
+      />
+
+      <DeleteClubSection
+        clubId={club.id}
+        clubName={club.name}
+        hasActiveSubscription={
+          !!subRecord?.stripe_subscription_id &&
+          (subRecord?.status === "active" || subRecord?.status === "trialling") &&
+          !subRecord?.cancel_at_period_end
+        }
       />
     </div>
   );

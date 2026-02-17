@@ -70,6 +70,13 @@ type DraftSessionClientProps = {
   courtLabels: CourtLabel[];
 };
 
+// Simple gender color mapping for UI indicators (0=Male, 1=Female, 2=Other)
+const genderColours: Record<number, string> = {
+  0: "var(--smash-gender-male)",
+  1: "var(--smash-gender-female)",
+  2: "var(--smash-gender-other)",
+};
+
 export function DraftSessionClient({
   sessionId,
   clubSlug,
@@ -367,18 +374,24 @@ export function DraftSessionClient({
               />
             </div>
           </CardHeader>
-          <CardContent>
+            <CardContent>
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
               {filteredAvailablePlayers.map((player) => (
                   <div
                   key={player.id}
                   className="flex items-center justify-between rounded-md border p-2"
                 >
-                  <div>
-                    <p className="font-medium">{player.name ?? `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim()}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Skill: {skillType === 0 ? player.numerical_skill_level : player.skill_tier?.name ?? 'Not set'}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-4 w-4 rounded-full"
+                      style={{ backgroundColor: genderColours[player.gender ?? 2] }}
+                    />
+                    <div>
+                      <p className="font-medium">{player.name ?? `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim()}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Skill: {skillType === 0 ? player.numerical_skill_level : player.skill_tier?.name ?? 'Not set'}
+                      </p>
+                    </div>
                   </div>
                   <Button
                     size="sm"
@@ -416,13 +429,19 @@ export function DraftSessionClient({
                     key={sessionPlayer.player_id}
                     className="flex items-center justify-between rounded-md border p-2"
                   >
-                    <div>
-                      <p className="font-medium">
-                      {sessionPlayer.players.name ?? `${sessionPlayer.players.first_name ?? ''} ${sessionPlayer.players.last_name ?? ''}`.trim()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Skill: {skillType === 0 ? sessionPlayer.players.numerical_skill_level : sessionPlayer.players.skill_tier?.name ?? 'Not set'}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-4 w-4 rounded-full"
+                        style={{ backgroundColor: genderColours[sessionPlayer.players.gender ?? 2] }}
+                      />
+                      <div>
+                        <p className="font-medium">
+                          {sessionPlayer.players.name ?? `${sessionPlayer.players.first_name ?? ''} ${sessionPlayer.players.last_name ?? ''}`.trim()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Skill: {skillType === 0 ? sessionPlayer.players.numerical_skill_level : sessionPlayer.players.skill_tier?.name ?? 'Not set'}
+                        </p>
+                      </div>
                     </div>
                     <Button
                       size="sm"

@@ -70,11 +70,9 @@ type DraftSessionClientProps = {
   courtLabels: CourtLabel[];
 };
 
-// Simple gender color mapping for UI indicators (0=Male, 1=Female, 2=Other)
 const genderColours: Record<number, string> = {
   0: "var(--smash-gender-male)",
   1: "var(--smash-gender-female)",
-  2: "var(--smash-gender-other)",
 };
 
 export function DraftSessionClient({

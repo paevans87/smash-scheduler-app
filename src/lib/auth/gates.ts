@@ -20,8 +20,9 @@ export async function checkAssociationGate(): Promise<string[]> {
 
   const { data: memberships } = await supabase
     .from("club_organisers")
-    .select("club_id")
-    .eq("user_id", user.id);
+    .select("club_id, clubs:club_id!inner(deleted_at)")
+    .eq("user_id", user.id)
+    .is("clubs.deleted_at", null);
 
   const clubIds = memberships?.map((m) => m.club_id) ?? [];
 
@@ -50,8 +51,9 @@ export async function getClubSubscriptions(userId: string): Promise<ClubSubscrip
 
   const { data: memberships } = await supabase
     .from("club_organisers")
-    .select("club_id")
-    .eq("user_id", userId);
+    .select("club_id, clubs:club_id!inner(deleted_at)")
+    .eq("user_id", userId)
+    .is("clubs.deleted_at", null);
 
   const clubIds = memberships?.map((m) => m.club_id) ?? [];
 

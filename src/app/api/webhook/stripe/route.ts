@@ -23,12 +23,15 @@ export async function POST(request: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch {
+  } catch (err) {
+    console.error("Stripe webhook signature verification failed:", err);
     return NextResponse.json(
       { error: "Invalid signature" },
       { status: 400 }
     );
   }
+
+  console.log("Stripe webhook received:", event.type);
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
@@ -91,13 +94,53 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  if (event.type === "customer.subscription.updated") {
+    const subscription = event.data.object as Stripe.Subscription;
+
+    const isCancelling =
+      subscription.cancel_at_period_end || subscription.cancel_at != null;
+
+    console.log("Subscription updated:", {
+      id: subscription.id,
+      status: subscription.status,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      cancel_at: subscription.cancel_at,
+      isCancelling,
+    });
+
+    const supabase = createServiceClient();
+    const firstItem = subscription.items.data[0];
+    const periodEnd = firstItem
+      ? new Date(firstItem.current_period_end * 1000).toISOString()
+      : null;
+
+    const status =
+      subscription.status === "trialing" ? "trialling" : "active";
+
+    const { error, count } = await supabase
+      .from("subscriptions")
+      .update({
+        status,
+        cancel_at_period_end: isCancelling,
+        ...(periodEnd && { current_period_end: periodEnd }),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("stripe_subscription_id", subscription.id);
+
+    console.log("Subscription update result:", { error, count, stripeSubId: subscription.id });
+  }
+
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object as Stripe.Subscription;
 
     const supabase = createServiceClient();
     await supabase
       .from("subscriptions")
-      .update({ status: "cancelled", updated_at: new Date().toISOString() })
+      .update({
+        status: "cancelled",
+        cancel_at_period_end: false,
+        updated_at: new Date().toISOString(),
+      })
       .eq("stripe_subscription_id", subscription.id);
   }
 

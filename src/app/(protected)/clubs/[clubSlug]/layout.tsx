@@ -28,6 +28,7 @@ export default async function ClubLayout({
     .from("clubs")
     .select("id, name")
     .eq("slug", clubSlug)
+    .is("deleted_at", null)
     .single();
 
   if (!club) {
@@ -47,8 +48,9 @@ export default async function ClubLayout({
 
   const { count: userClubCount } = await supabase
     .from("club_organisers")
-    .select("club_id", { count: "exact" })
-    .eq("user_id", user.id);
+    .select("club_id, clubs:club_id!inner(deleted_at)", { count: "exact" })
+    .eq("user_id", user.id)
+    .is("clubs.deleted_at", null);
 
   const { data: subscription } = await supabase
     .from("subscriptions")

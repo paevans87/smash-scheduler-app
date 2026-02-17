@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
   const { error: deleteError } = await supabase
     .from("clubs")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", clubId);
 
   if (deleteError) {

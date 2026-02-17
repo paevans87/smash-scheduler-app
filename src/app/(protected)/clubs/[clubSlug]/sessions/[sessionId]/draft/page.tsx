@@ -25,7 +25,7 @@ export default async function DraftSessionPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, game_type")
+    .select("id, game_type, skill_type")
     .eq("slug", clubSlug)
     .single();
 
@@ -58,7 +58,7 @@ export default async function DraftSessionPage({
 
   const { data: availablePlayers } = await supabase
     .from("players")
-    .select("id, name, skill_level, gender")
+    .select("id, name, numerical_skill_level, tier_skill_level, gender")
     .eq("club_id", club.id);
 
   const { data: sessionPlayersRaw } = await supabase
@@ -73,11 +73,11 @@ export default async function DraftSessionPage({
 
   const playerIds = sessionPlayersRaw?.map((sp) => sp.player_id) || [];
   
-  let sessionPlayerDetails: Array<{ id: string; name: string; skill_level: number; gender: number }> = [];
+  let sessionPlayerDetails: Array<{ id: string; name: string; numerical_skill_level: number | null; tier_skill_level: number | null; gender: number }> = [];
   if (playerIds.length > 0) {
     const { data: playersData } = await supabase
       .from("players")
-      .select("id, name, skill_level, gender")
+      .select("id, name, numerical_skill_level, tier_skill_level, gender")
       .in("id", playerIds);
     sessionPlayerDetails = playersData || [];
   }
@@ -96,6 +96,7 @@ export default async function DraftSessionPage({
       sessionId={sessionId}
       clubSlug={clubSlug}
       gameType={club.game_type}
+      skillType={club.skill_type}
       session={session}
       availablePlayers={availablePlayers || []}
       sessionPlayers={sessionPlayers}

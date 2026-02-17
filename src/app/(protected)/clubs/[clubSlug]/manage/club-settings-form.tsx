@@ -1,16 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,12 +13,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Club = {
   id: string;
   name: string;
   default_court_count: number;
   game_type: number;
+  skill_type: number;
 };
 
 type ClubSettingsFormProps = {
@@ -41,6 +46,10 @@ export function ClubSettingsForm({ club, clubSlug }: ClubSettingsFormProps) {
   const [name, setName] = useState(club.name);
   const [defaultCourtCount, setDefaultCourtCount] = useState(club.default_court_count);
   const [gameType, setGameType] = useState(club.game_type.toString());
+  const [skillType, setSkillType] = useState(club.skill_type.toString());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingSkillType, setPendingSkillType] = useState<number | null>(null);
+  const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const isValid = name.trim() !== "" && defaultCourtCount >= 1;
 
@@ -48,8 +57,17 @@ export function ClubSettingsForm({ club, clubSlug }: ClubSettingsFormProps) {
     e.preventDefault();
     if (!isValid) return;
 
-    setIsLoading(true);
+    // If skill type would change, show confirmation dialog
+    const newSkillType = parseInt(skillType);
+    if (newSkillType !== club.skill_type) {
+      setPendingSkillType(newSkillType);
+      setConfirmOpen(true);
+      // open dialog via hidden trigger
+      requestAnimationFrame(() => confirmBtnRef.current?.click());
+      return;
+    }
 
+    setIsLoading(true);
     try {
       const { error } = await supabase
         .from("clubs")
@@ -57,6 +75,7 @@ export function ClubSettingsForm({ club, clubSlug }: ClubSettingsFormProps) {
           name: name.trim(),
           default_court_count: defaultCourtCount,
           game_type: parseInt(gameType),
+          skill_type: parseInt(skillType),
         })
         .eq("id", club.id);
 
@@ -72,58 +91,94 @@ export function ClubSettingsForm({ club, clubSlug }: ClubSettingsFormProps) {
     }
   }
 
+  async function confirmSkillTypeChange() {
+    // Commit the pending skill type change
+    if (pendingSkillType == null) return;
+    setConfirmOpen(false);
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from("clubs")
+        .update({
+          name: name.trim(),
+          default_court_count: defaultCourtCount,
+          game_type: parseInt(gameType),
+          skill_type: pendingSkillType,
+        })
+        .eq("id", club.id);
+      if (error) throw error;
+      router.refresh();
+    } catch {
+      // ignore
+    } finally {
+      setIsLoading(false);
+      setPendingSkillType(null);
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Club Details</CardTitle>
-          <CardDescription>Update your club information</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Club Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter club name"
-              required
-            />
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <button ref={confirmBtnRef} className="sr-only" aria-label="confirm-skill-change" />
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Skill Measurement Change</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogDescription>
+            Changing the skill measurement type will require updating all players' skill data. This may affect how players are displayed and filtered. Do you want to proceed?
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => { await confirmSkillTypeChange(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Proceed</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Club Name</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter club name"
+            required
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="courts">Default Number of Courts</Label>
-            <Input
-              id="courts"
-              type="number"
-              min={1}
-              max={20}
-              value={defaultCourtCount}
-              onChange={(e) => setDefaultCourtCount(parseInt(e.target.value) || 1)}
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              This will be the default when creating new sessions
-            </p>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="courts">Default Number of Courts</Label>
+          <Input
+            id="courts"
+            type="number"
+            min={1}
+            max={20}
+            value={defaultCourtCount}
+            onChange={(e) => setDefaultCourtCount(parseInt(e.target.value) || 1)}
+            required
+          />
+          <p className="text-xs text-muted-foreground">
+            This will be the default when creating new sessions
+          </p>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="gameType">Default Game Type</Label>
-            <Select value={gameType} onValueChange={setGameType}>
-              <SelectTrigger id="gameType">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">Singles</SelectItem>
-                <SelectItem value="1">Doubles</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Determines minimum players needed per session (2 for singles, 4 for doubles)
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="space-y-2">
+          <Label htmlFor="gameType">Default Game Type</Label>
+          <Select value={gameType} onValueChange={setGameType}>
+            <SelectTrigger id="gameType">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Singles</SelectItem>
+              <SelectItem value="1">Doubles</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Determines minimum players needed per session (2 for singles, 4 for doubles)
+          </p>
+        </div>
+      </div>
 
       <div className="flex gap-4">
         <Button type="submit" disabled={!isValid || isLoading}>

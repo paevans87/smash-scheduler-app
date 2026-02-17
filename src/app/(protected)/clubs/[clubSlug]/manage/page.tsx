@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { MatchMakingProfileList } from "./match-making-profile-list";
 import { ClubSettingsForm } from "./club-settings-form";
+import { SkillMeasurementSection } from "./skill-measurement-section";
 import { SubscriptionCard } from "./subscription-card";
 import { DeleteClubSection } from "./delete-club-section";
 import { getClubSubscription } from "@/lib/auth/gates";
@@ -35,6 +36,7 @@ type Club = {
   name: string;
   default_court_count: number;
   game_type: number;
+  skill_type: number;
 };
 
 type ClubManagementPageProps = {
@@ -57,7 +59,7 @@ export default async function ClubManagementPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, name, default_court_count, game_type")
+    .select("id, name, default_court_count, game_type, skill_type")
     .eq("slug", clubSlug)
     .single();
 
@@ -139,6 +141,22 @@ export default async function ClubManagementPage({
         </CardHeader>
         <CardContent>
           <ClubSettingsForm club={club as Club} clubSlug={clubSlug} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Skill Measurement</CardTitle>
+          <CardDescription>
+            Choose how player skill levels are measured and displayed
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SkillMeasurementSection
+            clubId={club.id}
+            clubSlug={clubSlug}
+            currentSkillType={club.skill_type}
+          />
         </CardContent>
       </Card>
 

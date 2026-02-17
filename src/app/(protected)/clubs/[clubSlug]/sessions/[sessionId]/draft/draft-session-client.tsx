@@ -37,7 +37,8 @@ type Player = {
   name?: string;
   first_name?: string;
   last_name?: string;
-  skill_level: number;
+  numerical_skill_level: number | null;
+  tier_skill_level: number | null;
   gender: number;
 };
 
@@ -56,6 +57,7 @@ type DraftSessionClientProps = {
   sessionId: string;
   clubSlug: string;
   gameType: number;
+  skillType: number;
   session: {
     id: string;
     scheduled_date_time: string;
@@ -71,6 +73,7 @@ export function DraftSessionClient({
   sessionId,
   clubSlug,
   gameType,
+  skillType,
   session,
   availablePlayers,
   sessionPlayers,
@@ -373,7 +376,7 @@ export function DraftSessionClient({
                   <div>
                     <p className="font-medium">{player.name ?? `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim()}</p>
                     <p className="text-xs text-muted-foreground">
-                      Skill: {player.skill_level}
+                      Skill: {skillType === 0 ? player.numerical_skill_level : player.tier_skill_level === 0 ? 'Lower' : player.tier_skill_level === 2 ? 'Upper' : 'Middle'}
                     </p>
                   </div>
                   <Button
@@ -417,7 +420,7 @@ export function DraftSessionClient({
                       {sessionPlayer.players.name ?? `${sessionPlayer.players.first_name ?? ''} ${sessionPlayer.players.last_name ?? ''}`.trim()}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Skill: {sessionPlayer.players.skill_level}
+                        Skill: {skillType === 0 ? sessionPlayer.players.numerical_skill_level : sessionPlayer.players.tier_skill_level === 0 ? 'Lower' : sessionPlayer.players.tier_skill_level === 2 ? 'Upper' : 'Middle'}
                       </p>
                     </div>
                     <Button

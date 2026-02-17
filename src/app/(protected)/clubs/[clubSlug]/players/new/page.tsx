@@ -17,7 +17,7 @@ export default async function NewPlayerPage({ params }: NewPlayerPageProps) {
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, skill_type")
     .eq("slug", clubSlug)
     .single();
 
@@ -68,5 +68,5 @@ export default async function NewPlayerPage({ params }: NewPlayerPageProps) {
     );
   }
 
-  return <PlayerNewClient clubId={club.id} clubSlug={clubSlug} />;
+  return <PlayerNewClient clubId={club.id} clubSlug={clubSlug} skillType={club.skill_type} />;
 }

@@ -13,7 +13,7 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, skill_type")
     .eq("slug", clubSlug)
     .single();
 
@@ -35,6 +35,7 @@ export default async function PlayersPage({ params }: PlayersPageProps) {
       clubSlug={clubSlug}
       planType={subscription?.planType ?? "free"}
       playerCount={playerCount ?? 0}
+      skillType={club.skill_type}
     />
   );
 }

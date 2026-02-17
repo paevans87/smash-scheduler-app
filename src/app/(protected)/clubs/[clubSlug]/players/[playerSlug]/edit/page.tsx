@@ -15,7 +15,7 @@ export default async function EditPlayerPage({ params }: EditPlayerPageProps) {
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id")
+    .select("id, skill_type")
     .eq("slug", clubSlug)
     .single();
 
@@ -34,5 +34,5 @@ export default async function EditPlayerPage({ params }: EditPlayerPageProps) {
     redirect(`/clubs/${clubSlug}/players`);
   }
 
-  return <PlayerEditClient clubId={club.id} clubSlug={clubSlug} playerId={player.id} playerSlug={playerSlug} />;
+  return <PlayerEditClient clubId={club.id} clubSlug={clubSlug} playerId={player.id} playerSlug={playerSlug} skillType={club.skill_type} />;
 }

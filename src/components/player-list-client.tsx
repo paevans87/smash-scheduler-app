@@ -20,7 +20,8 @@ type Player = {
   first_name: string;
   last_name: string;
   name?: string;
-  skill_level: number;
+  numerical_skill_level: number | null;
+  tier_skill_level: number | null;
   gender: number;
   play_style_preference: number;
 };
@@ -49,7 +50,7 @@ function usePlayers(clubId: string): UsePlayersResult {
         const supabase = createClient();
         const { data } = await supabase
           .from("players")
-          .select("id, club_id, slug, first_name, last_name, name, skill_level, gender, play_style_preference")
+          .select("id, club_id, slug, first_name, last_name, name, numerical_skill_level, tier_skill_level, gender, play_style_preference")
           .eq("club_id", clubId)
           .order("name");
 
@@ -88,9 +89,10 @@ type PlayerListClientProps = {
   clubSlug: string;
   planType: PlanType;
   playerCount: number;
+  skillType: number;
 };
 
-export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: PlayerListClientProps) {
+export function PlayerListClient({ clubId, clubSlug, planType, playerCount, skillType }: PlayerListClientProps) {
   const { players, isLoading, mutate } = usePlayers(clubId);
 
   const handleDeleted = useCallback(() => {
@@ -103,6 +105,7 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
   const [searchText, setSearchText] = useState<string>("");
   const [genderFilter, setGenderFilter] = useState<string>("any");
   const [minSkill, setMinSkill] = useState<number>(1);
+  const [tierFilter, setTierFilter] = useState<string>("any");
 
   const filteredPlayers = players.filter((p) => {
     const name = [p?.first_name, p?.last_name].filter(Boolean).length
@@ -112,8 +115,18 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
     if (searchText && !nameLC.includes(searchText.toLowerCase())) return false;
     const g = (p?.gender ?? 2).toString();
     if (genderFilter !== "any" && g !== genderFilter) return false;
-    const skill = p?.skill_level ?? 0;
-    if (skill < minSkill) return false;
+    if (skillType === 1) {
+      // Tier mode: filter by exact tier when a specific tier is chosen
+      if (tierFilter !== "any") {
+        const targetTier = Number(tierFilter);
+        const tierVal = p?.tier_skill_level;
+        if (tierVal == null || tierVal !== targetTier) return false;
+      }
+    } else {
+      // Numeric mode
+      const skill = p?.numerical_skill_level;
+      if (skill !== null && skill !== undefined && skill < minSkill) return false;
+    }
     return true;
   });
 
@@ -178,7 +191,7 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-muted-foreground">Filters</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8 p-4">
+        <CardContent className={`grid grid-cols-1 ${skillType === 1 ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-8 p-4`}>
           <div>
             <Label>Name</Label>
             <Input value={searchText} onChange={(e) => setSearchText(e.target.value)} placeholder="Search by name" />
@@ -194,11 +207,26 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Min Skill</Label>
-            <Slider min={1} max={10} value={[minSkill]} onValueChange={([v]) => setMinSkill(v)} />
-            <div className="text-xs text-muted-foreground mt-1">Current: {minSkill}</div>
-          </div>
+          {skillType === 0 ? (
+            <div className="space-y-2">
+              <Label>Min Skill</Label>
+              <Slider min={1} max={10} value={[minSkill]} onValueChange={([v]) => setMinSkill(v)} />
+              <div className="text-xs text-muted-foreground mt-1">Current: {minSkill}</div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Skill Tier</Label>
+              <Select value={tierFilter} onValueChange={setTierFilter}>
+                <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any</SelectItem>
+                  <SelectItem value="0">Lower</SelectItem>
+                  <SelectItem value="1">Middle</SelectItem>
+                  <SelectItem value="2">Upper</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
       )}
@@ -226,9 +254,11 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount }: Pl
                 id={player.id}
                 slug={player.slug}
                 name={displayName}
-                skillLevel={player.skill_level}
+                skillLevel={player.numerical_skill_level}
+                tierSkillLevel={player.tier_skill_level}
                 gender={player.gender}
                 clubSlug={clubSlug}
+                skillType={skillType}
                 onDeleted={handleDeleted}
               />
             );

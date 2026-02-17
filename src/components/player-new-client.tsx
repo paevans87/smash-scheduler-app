@@ -10,11 +10,12 @@ import { Button } from "@/components/ui/button";
 type PlayerNewClientProps = {
   clubId: string;
   clubSlug: string;
+  skillType: number;
 };
 
 const PLAYER_FORM_ID = "player-new-form";
 
-export function PlayerNewClient({ clubId, clubSlug }: PlayerNewClientProps) {
+export function PlayerNewClient({ clubId, clubSlug, skillType }: PlayerNewClientProps) {
   const router = useRouter();
   const [otherPlayers, setOtherPlayers] = useState<{ id: string; name: string }[]>([]);
   const [pendingBlacklistChanges, setPendingBlacklistChanges] = useState<{
@@ -58,6 +59,7 @@ export function PlayerNewClient({ clubId, clubSlug }: PlayerNewClientProps) {
       <PlayerForm
         clubId={clubId}
         clubSlug={clubSlug}
+        skillType={skillType}
         onSave={handleSaveBlacklist}
         hideActions
         formId={PLAYER_FORM_ID}

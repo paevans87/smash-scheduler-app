@@ -21,7 +21,8 @@ type Player = {
   last_name: string;
   name?: string;
   slug?: string;
-  skill_level: number;
+  numerical_skill_level: number | null;
+  tier_skill_level: number | null;
   gender: number;
   play_style_preference: number;
 };
@@ -29,6 +30,7 @@ type Player = {
 type PlayerFormProps = {
   clubId: string;
   clubSlug: string;
+  skillType: number;
   player?: Partial<Player> & { id?: string };
   onSave?: (playerId: string) => Promise<void>;
   hideActions?: boolean;
@@ -46,6 +48,12 @@ const playStyleOptions = [
   { value: "2", label: "Level (same gender)" },
 ];
 
+const tierSkillOptions = [
+  { value: "0", label: "Lower" },
+  { value: "1", label: "Middle" },
+  { value: "2", label: "Upper" },
+];
+
 function generatePlayerSlug(firstName: string, lastName: string): string {
   const combined = `${firstName} ${lastName}`.trim();
   return combined
@@ -56,12 +64,14 @@ function generatePlayerSlug(firstName: string, lastName: string): string {
 
 export type PlayerFormHandle = { getPayload: () => Record<string, unknown>; isSaving: () => boolean };
 
-export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function PlayerForm({ clubId, clubSlug, player, onSave, hideActions, formId }, ref) {
+export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function PlayerForm({ clubId, clubSlug, skillType, player, onSave, hideActions, formId }, ref) {
   const router = useRouter();
 
   const [firstName, setFirstName] = useState<string>(player?.first_name ?? "");
   const [lastName, setLastName] = useState<string>(player?.last_name ?? "");
-  const [skillLevel, setSkillLevel] = useState<number>(player?.skill_level ?? 5);
+  const [skillLevel, setSkillLevel] = useState<number>(player?.numerical_skill_level ?? 5);
+  // Start with empty tier when not set to force user to explicitly choose
+  const [tierSkillLevel, setTierSkillLevel] = useState<string>(player?.tier_skill_level != null ? String(player!.tier_skill_level) : "");
   const [gender, setGender] = useState<string>(String(player?.gender ?? 0));
   const [playStyle, setPlayStyle] = useState<string>(String(player?.play_style_preference ?? 0));
   const [saving, setSaving] = useState(false);
@@ -73,7 +83,8 @@ export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function
       first_name: firstName?.trim(),
       last_name: lastName?.trim() ?? null,
       name: fullName,
-      skill_level: skillLevel,
+      numerical_skill_level: skillType === 0 ? skillLevel : null,
+      tier_skill_level: skillType === 1 ? (tierSkillLevel === "" ? null : Number(tierSkillLevel)) : null,
       gender: Number(gender),
       play_style_preference: Number(playStyle),
     };
@@ -152,11 +163,28 @@ export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>Skill Level: {skillLevel}</Label>
-        <Slider min={1} max={10} value={[skillLevel]} onValueChange={([v]) => setSkillLevel(v)} />
-        <div className="text-xs text-muted-foreground">1 (Beginner) – 10 (Elite)</div>
-      </div>
+      {skillType === 0 ? (
+        <div className="space-y-2">
+          <Label>Skill Level: {skillLevel}</Label>
+          <Slider min={1} max={10} value={[skillLevel]} onValueChange={([v]) => setSkillLevel(v)} />
+          <div className="text-xs text-muted-foreground">1 (Beginner) – 10 (Elite)</div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label>Skill Tier</Label>
+          <Select value={tierSkillLevel} onValueChange={setTierSkillLevel}>
+            <SelectTrigger>
+              <SelectValue placeholder="Not set" />
+            </SelectTrigger>
+            <SelectContent>
+              {tierSkillOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="text-xs text-muted-foreground">Select the tier that best describes player ability</div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Gender</Label>

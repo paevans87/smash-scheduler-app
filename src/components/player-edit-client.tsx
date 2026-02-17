@@ -12,7 +12,8 @@ type Player = {
   first_name: string;
   last_name: string;
   name?: string;
-  skill_level: number;
+  numerical_skill_level: number | null;
+  tier_skill_level: number | null;
   gender: number;
   play_style_preference: number;
 };
@@ -28,11 +29,12 @@ type PlayerEditClientProps = {
   clubSlug: string;
   playerId: string;
   playerSlug?: string;
+  skillType: number;
 };
 
 const PLAYER_FORM_ID = "player-edit-form";
 
-export function PlayerEditClient({ clubId, clubSlug, playerId }: PlayerEditClientProps) {
+export function PlayerEditClient({ clubId, clubSlug, playerId, skillType }: PlayerEditClientProps) {
   const router = useRouter();
   const [player, setPlayer] = useState<Player | null>(null);
   const [partnerBlacklist, setPartnerBlacklist] = useState<BlacklistEntry[]>([]);
@@ -55,7 +57,7 @@ export function PlayerEditClient({ clubId, clubSlug, playerId }: PlayerEditClien
       const [{ data: playerData }, { data: blacklists }, { data: others }] = await Promise.all([
         supabase
           .from("players")
-          .select("id, first_name, last_name, name, skill_level, gender, play_style_preference")
+          .select("id, first_name, last_name, name, numerical_skill_level, tier_skill_level, gender, play_style_preference")
           .eq("id", playerId)
           .eq("club_id", clubId)
           .single(),
@@ -156,6 +158,7 @@ export function PlayerEditClient({ clubId, clubSlug, playerId }: PlayerEditClien
       <PlayerForm
         clubId={clubId}
         clubSlug={clubSlug}
+        skillType={skillType}
         player={player}
         onSave={handleSaveBlacklist}
         hideActions

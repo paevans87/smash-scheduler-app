@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Roboto } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClientProviders } from "@/components/client-providers";
@@ -21,11 +21,14 @@ export const metadata: Metadata = {
     apple: "/icon-180.png",
   },
   manifest: "/manifest.json",
-  themeColor: "#2ECC71",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2ECC71",
 };
 
 export default function RootLayout({
@@ -35,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${roboto.variable} antialiased`}>
+      <body className={`${roboto.variable} antialiased`} suppressHydrationWarning>
         <Analytics />
         <CookieBanner />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

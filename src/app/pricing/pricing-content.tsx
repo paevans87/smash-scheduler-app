@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -14,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { StripePriceInfo } from "@/lib/stripe-prices";
 
 function formatPrice(unitAmount: number, currency: string): string {
@@ -27,12 +30,14 @@ type PricingContentProps = {
   proPrices: StripePriceInfo[];
   stripeFetchError: boolean;
   canCreateFreeClub: boolean;
+  canStartTrial: boolean;
 };
 
 export default function PricingContent({
   proPrices,
   stripeFetchError,
   canCreateFreeClub,
+  canStartTrial,
 }: PricingContentProps) {
   const router = useRouter();
   const [clubName, setClubName] = useState("");
@@ -154,128 +159,163 @@ export default function PricingContent({
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-8">
-      <div className="w-full max-w-sm">
-        <h1 className="mb-2 text-center text-2xl font-bold">Choose a Plan</h1>
-        <p className="mb-4 text-center text-muted-foreground">
-          Name your club and pick a plan to get started.
-        </p>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="club-name">Club Name</Label>
-          <Input
-            id="club-name"
-            placeholder="e.g. Shuttle Stars"
-            value={clubName}
-            onChange={(e) => setClubName(e.target.value)}
-          />
-        </div>
-        {error && (
-          <p className="mt-2 text-sm text-destructive">{error}</p>
-        )}
+    <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-green-50 via-white to-green-100/30 px-4 py-12 dark:from-background dark:via-background dark:to-background">
+      {/* Decorative background blurs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
       </div>
 
-      <div className="flex w-full max-w-4xl flex-col gap-6 md:flex-row">
-        <Card className={`flex flex-1 flex-col ${!canCreateFreeClub ? 'opacity-75' : ''}`}>
-          <CardHeader>
-            <CardTitle>Free</CardTitle>
-            <CardDescription>Basic scheduling for small clubs</CardDescription>
-            <p className="text-lg font-semibold">Free</p>
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col justify-between gap-4">
-            <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
-              <li>{"\u2022"} 1 club only</li>
-              <li>{"\u2022"} 16 players max</li>
-              <li>{"\u2022"} 7 days advance scheduling</li>
-            </ul>
-            {!canCreateFreeClub && (
-              <p className="text-xs text-muted-foreground text-center">
-                You have reached the free club limit. Upgrade to Pro for unlimited clubs.
-              </p>
-            )}
-            <Button
-              className="w-full"
-              disabled={loading || !canCreateFreeClub}
-              onClick={handleSelectFree}
-            >
-              {loading ? "Creating\u2026" : canCreateFreeClub ? "Select Free" : "Limit Reached"}
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="relative z-10 flex w-full max-w-4xl flex-col items-center gap-8">
+        {/* Branding */}
+        <div className="flex flex-col items-center gap-3">
+          <Image
+            src="/icon-192.png"
+            alt="SmashScheduler"
+            width={56}
+            height={56}
+            className="shrink-0 drop-shadow-md"
+          />
+          <h1 className="text-2xl font-bold tracking-tight">SmashScheduler</h1>
+        </div>
 
-        <Card className="flex flex-1 flex-col">
-          <CardHeader>
-            <CardTitle>Pro</CardTitle>
-            <CardDescription>
-              Full features for growing clubs
-            </CardDescription>
-            {proPricingAvailable ? (
-              <div className="flex flex-col gap-2">
-                {monthlyPrice && yearlyPrice && (
-                  <Tabs
-                    value={selectedInterval}
-                    onValueChange={(v) =>
-                      setSelectedInterval(v as "month" | "year")
-                    }
-                  >
-                    <TabsList className="w-full">
-                      <TabsTrigger value="month">Monthly</TabsTrigger>
-                      <TabsTrigger value="year">Yearly</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                )}
-                <p className="text-lg font-semibold">
-                  {formatPrice(selectedPrice.unitAmount, selectedPrice.currency)}
-                  <span className="text-sm font-normal text-muted-foreground">
-                    /{selectedPrice.interval === "year" ? "yr" : "mo"}
-                  </span>
+        {/* Heading & club name input */}
+        <div className="w-full max-w-sm text-center">
+          <h2 className="text-xl font-semibold">Choose a Plan</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Name your club and pick a plan to get started.
+          </p>
+          <div className="mt-4 flex flex-col gap-2 text-left">
+            <Label htmlFor="club-name">Club Name</Label>
+            <Input
+              id="club-name"
+              placeholder="e.g. Shuttle Stars"
+              value={clubName}
+              onChange={(e) => setClubName(e.target.value)}
+            />
+          </div>
+          {error && (
+            <p className="mt-2 text-sm text-destructive">{error}</p>
+          )}
+        </div>
+
+        {/* Plan cards */}
+        <div className="flex w-full flex-col gap-4 md:flex-row">
+          <Card className={`flex flex-1 flex-col bg-white/80 backdrop-blur-sm transition-all hover:shadow-md dark:bg-card/80 ${!canCreateFreeClub ? 'opacity-75' : ''}`}>
+            <CardHeader>
+              <CardTitle>Free</CardTitle>
+              <CardDescription>Basic scheduling for small clubs</CardDescription>
+              <p className="text-lg font-semibold">Free</p>
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col justify-between gap-4">
+              <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+                <li>{"\u2022"} 1 club only</li>
+                <li>{"\u2022"} 16 players max</li>
+                <li>{"\u2022"} 7 days advance scheduling</li>
+              </ul>
+              {!canCreateFreeClub && (
+                <p className="text-xs text-muted-foreground text-center">
+                  You have reached the free club limit. Upgrade to Pro for unlimited clubs.
                 </p>
-              </div>
-            ) : (
-              <p className="text-lg font-semibold text-muted-foreground">
-                Pricing unavailable
-              </p>
-            )}
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col justify-between gap-4">
-            <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
-              <li>{"\u2022"} Unlimited courts</li>
-              <li>{"\u2022"} Analytics</li>
-              <li>{"\u2022"} Advanced matchmaking</li>
-            </ul>
-            <Button
-              className="w-full"
-              disabled={!proPricingAvailable || loading}
-              onClick={handleSelectPro}
-            >
-              {loading ? "Creating\u2026" : "Select Pro"}
-            </Button>
-          </CardContent>
-        </Card>
+              )}
+              <Button
+                className="w-full"
+                disabled={loading || !canCreateFreeClub}
+                onClick={handleSelectFree}
+              >
+                {loading ? "Creating\u2026" : canCreateFreeClub ? "Select Free" : "Limit Reached"}
+              </Button>
+            </CardContent>
+          </Card>
 
-        <Card className="flex flex-1 flex-col">
-          <CardHeader>
-            <CardTitle>Pro Trial</CardTitle>
-            <CardDescription>
-              Try all Pro features at no cost
-            </CardDescription>
-            <p className="text-lg font-semibold">Free for 14 days</p>
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col justify-between gap-4">
-            <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
-              <li>{"\u2022"} Unlimited courts</li>
-              <li>{"\u2022"} Analytics</li>
-              <li>{"\u2022"} Advanced matchmaking</li>
-              <li>{"\u2022"} 14-day trial</li>
-            </ul>
-            <Button
-              className="w-full"
-              disabled={!proPricingAvailable || loading}
-              onClick={handleStartTrial}
-            >
-              {loading ? "Creating\u2026" : "Start Free Trial"}
+          <Card className="flex flex-1 flex-col bg-white/80 backdrop-blur-sm transition-all hover:shadow-md dark:bg-card/80">
+            <CardHeader>
+              <CardTitle>Pro</CardTitle>
+              <CardDescription>
+                Full features for growing clubs
+              </CardDescription>
+              {proPricingAvailable ? (
+                <div className="flex flex-col gap-2">
+                  {monthlyPrice && yearlyPrice && (
+                    <Tabs
+                      value={selectedInterval}
+                      onValueChange={(v) =>
+                        setSelectedInterval(v as "month" | "year")
+                      }
+                    >
+                      <TabsList className="w-full">
+                        <TabsTrigger value="month">Monthly</TabsTrigger>
+                        <TabsTrigger value="year">Yearly</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  )}
+                  <p className="text-lg font-semibold">
+                    {formatPrice(selectedPrice.unitAmount, selectedPrice.currency)}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      /{selectedPrice.interval === "year" ? "yr" : "mo"}
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-lg font-semibold text-muted-foreground">
+                  Pricing unavailable
+                </p>
+              )}
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col justify-between gap-4">
+              <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+                <li>{"\u2022"} Unlimited courts</li>
+                <li>{"\u2022"} Analytics</li>
+                <li>{"\u2022"} Advanced matchmaking</li>
+              </ul>
+              <Button
+                className="w-full"
+                disabled={!proPricingAvailable || loading}
+                onClick={handleSelectPro}
+              >
+                {loading ? "Creating\u2026" : "Select Pro"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {canStartTrial && (
+            <Card className="flex flex-1 flex-col bg-white/80 backdrop-blur-sm transition-all hover:shadow-md dark:bg-card/80">
+              <CardHeader>
+                <CardTitle>Pro Trial</CardTitle>
+                <CardDescription>
+                  Try all Pro features at no cost
+                </CardDescription>
+                <p className="text-lg font-semibold">Free for 14 days</p>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col justify-between gap-4">
+                <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+                  <li>{"\u2022"} Unlimited courts</li>
+                  <li>{"\u2022"} Analytics</li>
+                  <li>{"\u2022"} Advanced matchmaking</li>
+                  <li>{"\u2022"} Cancel any time</li>
+                </ul>
+                <Button
+                  className="w-full"
+                  disabled={!proPricingAvailable || loading}
+                  onClick={handleStartTrial}
+                >
+                  {loading ? "Creating\u2026" : "Start Free Trial"}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Sign out & theme */}
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <form action="/logout" method="post">
+            <Button variant="ghost" size="sm" type="submit" className="text-muted-foreground">
+              <LogOut className="mr-2 size-4" />
+              Sign out
             </Button>
-          </CardContent>
-        </Card>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -1,14 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { LogOut, Plus, Crown, AlertTriangle, ChevronRight } from "lucide-react";
+import { LogOut, Plus, AlertTriangle, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import { canCreateClub } from "@/lib/subscription/restrictions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { PlanType } from "@/lib/subscription/hooks";
 
@@ -46,16 +45,6 @@ function badgeClasses(sub: Subscription): string {
   return "bg-muted text-muted-foreground";
 }
 
-function hasProSubscription(clubs: ClubRow[]): boolean {
-  return clubs.some((row) =>
-    toArray(row.clubs.subscriptions).some(
-      (s) =>
-        (s.status === "active" || s.status === "trialling") &&
-        s.plan_type === "pro"
-    )
-  );
-}
-
 export default async function ClubsPage() {
   const supabase = await createClient();
   const {
@@ -68,8 +57,9 @@ export default async function ClubsPage() {
 
   const { data } = await supabase
     .from("club_organisers")
-    .select("club_id, clubs:club_id(id, name, slug, subscriptions(status, plan_type, cancel_at_period_end))")
-    .eq("user_id", user.id);
+    .select("club_id, clubs:club_id!inner(id, name, slug, subscriptions(status, plan_type, cancel_at_period_end))")
+    .eq("user_id", user.id)
+    .is("clubs.deleted_at", null);
 
   const clubs = (data as unknown as ClubRow[]) ?? [];
 
@@ -82,15 +72,6 @@ export default async function ClubsPage() {
   const lapsedClubs = clubs.filter((row) =>
     toArray(row.clubs.subscriptions).some(
       (s) => s.status === "cancelled" || s.status === "expired"
-    )
-  );
-
-  const userHasPro = hasProSubscription(activeClubs);
-  const canCreateMoreClubs = canCreateClub(activeClubs.length, userHasPro ? "pro" : "free");
-
-  const freeClub = activeClubs.find((row) =>
-    toArray(row.clubs.subscriptions).some(
-      (s) => (s.status === "active" || s.status === "trialling") && s.plan_type === "free"
     )
   );
 
@@ -181,62 +162,25 @@ export default async function ClubsPage() {
             );
           })}
 
-          {/* Create / Upgrade */}
-          {canCreateMoreClubs ? (
-            <Link href="/pricing">
-              <Card className="group border-dashed border-2 bg-white/50 backdrop-blur-sm transition-all hover:border-primary hover:bg-white/80 hover:shadow-md dark:bg-card/50 dark:hover:bg-card/80">
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Plus className="size-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
-                      Create a Club
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Set up a new badminton club
-                    </p>
-                  </div>
-                  <ChevronRight className="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                </CardContent>
-              </Card>
-            </Link>
-          ) : freeClub ? (
-            <Link href={`/upgrade?club=${freeClub.clubs.slug}`}>
-              <Card className="group border-dashed border-2 border-amber-200 bg-amber-50/50 backdrop-blur-sm transition-all hover:border-amber-400 hover:shadow-md dark:border-amber-900 dark:bg-amber-950/20 dark:hover:border-amber-700">
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
-                    <Crown className="size-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-amber-800 dark:text-amber-200">
-                      Upgrade to Pro
-                    </p>
-                    <p className="text-xs text-amber-600 dark:text-amber-400">
-                      Create unlimited clubs
-                    </p>
-                  </div>
-                  <ChevronRight className="size-5 text-amber-400 transition-transform group-hover:translate-x-0.5" />
-                </CardContent>
-              </Card>
-            </Link>
-          ) : (
-            <Card className="border-dashed border-2 border-amber-200 bg-amber-50/50 backdrop-blur-sm dark:border-amber-900 dark:bg-amber-950/20">
+          {/* Create a Club */}
+          <Link href="/pricing">
+            <Card className="group border-dashed border-2 bg-white/50 backdrop-blur-sm transition-all hover:border-primary hover:bg-white/80 hover:shadow-md dark:bg-card/50 dark:hover:bg-card/80">
               <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400">
-                  <Crown className="size-5" />
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Plus className="size-5" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-amber-800 dark:text-amber-200">
-                    Upgrade to Pro
+                  <p className="font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
+                    Create a Club
                   </p>
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
-                    Create unlimited clubs
+                  <p className="text-xs text-muted-foreground">
+                    Set up a new badminton club
                   </p>
                 </div>
+                <ChevronRight className="size-5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
               </CardContent>
             </Card>
-          )}
+          </Link>
         </div>
 
         {/* Sign out & theme */}

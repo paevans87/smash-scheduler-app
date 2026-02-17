@@ -30,11 +30,20 @@ export default async function PricingPage() {
   const hasProPlan = subscriptions.some((s) => s.planType === "pro");
   const canCreateFreeClub = canCreateClub(clubCount, hasProPlan ? "pro" : "free");
 
+  const { count: priorProCount } = await supabase
+    .from("subscriptions")
+    .select("id", { count: "exact", head: true })
+    .eq("plan_type", "pro")
+    .eq("created_by", user.id);
+
+  const hasUsedTrial = (priorProCount ?? 0) > 0;
+
   return (
     <PricingContent
       proPrices={proPrices}
       stripeFetchError={stripeFetchError}
       canCreateFreeClub={canCreateFreeClub}
+      canStartTrial={!hasUsedTrial}
     />
   );
 }

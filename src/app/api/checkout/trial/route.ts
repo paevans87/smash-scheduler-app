@@ -25,18 +25,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data: existingPro } = await supabase
+  const { count: priorProCount } = await supabase
     .from("subscriptions")
-    .select("id, club_id!inner(id), club_organisers:club_id(user_id)")
+    .select("id", { count: "exact", head: true })
     .eq("plan_type", "pro")
-    .limit(1);
+    .eq("created_by", user.id);
 
-  const hasUsedTrial = existingPro?.some((sub) => {
-    const organisers = sub.club_organisers as unknown as { user_id: string }[];
-    return organisers?.some((org) => org.user_id === user.id);
-  });
-
-  if (hasUsedTrial) {
+  if ((priorProCount ?? 0) > 0) {
     return NextResponse.json(
       { error: "You have already used your free trial" },
       { status: 409 }
@@ -55,7 +50,7 @@ export async function POST(request: NextRequest) {
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customer.id,
-    payment_method_collection: "if_required",
+    payment_method_collection: "always",
     subscription_data: {
       trial_period_days: 14,
       metadata: {

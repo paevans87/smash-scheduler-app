@@ -23,16 +23,30 @@ export default async function EditPlayerPage({ params }: EditPlayerPageProps) {
     redirect("/clubs");
   }
 
-  const { data: player } = await supabase
-    .from("players")
-    .select("id")
-    .eq("club_id", club.id)
-    .eq("slug", playerSlug)
-    .single();
+  const [{ data: player }, { data: clubTiers }, { data: defaultTiers }] = await Promise.all([
+    supabase
+      .from("players")
+      .select("id")
+      .eq("club_id", club.id)
+      .eq("slug", playerSlug)
+      .single(),
+    supabase
+      .from("club_skill_tiers")
+      .select("*")
+      .eq("club_id", club.id)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("club_skill_tiers")
+      .select("*")
+      .is("club_id", null)
+      .order("display_order", { ascending: true }),
+  ]);
 
   if (!player) {
     redirect(`/clubs/${clubSlug}/players`);
   }
 
-  return <PlayerEditClient clubId={club.id} clubSlug={clubSlug} playerId={player.id} playerSlug={playerSlug} skillType={club.skill_type} />;
+  const tiers = (clubTiers && clubTiers.length > 0) ? clubTiers : (defaultTiers ?? []);
+
+  return <PlayerEditClient clubId={club.id} clubSlug={clubSlug} playerId={player.id} playerSlug={playerSlug} skillType={club.skill_type} tiers={tiers} />;
 }

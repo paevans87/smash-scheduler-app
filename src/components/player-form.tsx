@@ -22,15 +22,24 @@ type Player = {
   name?: string;
   slug?: string;
   numerical_skill_level: number | null;
-  tier_skill_level: number | null;
+  skill_tier_id: string | null;
   gender: number;
   play_style_preference: number;
+};
+
+export type SkillTier = {
+  id: string;
+  club_id: string | null;
+  name: string;
+  score: number;
+  display_order: number;
 };
 
 type PlayerFormProps = {
   clubId: string;
   clubSlug: string;
   skillType: number;
+  tiers: SkillTier[];
   player?: Partial<Player> & { id?: string };
   onSave?: (playerId: string) => Promise<void>;
   hideActions?: boolean;
@@ -48,12 +57,6 @@ const playStyleOptions = [
   { value: "2", label: "Level (same gender)" },
 ];
 
-const tierSkillOptions = [
-  { value: "0", label: "Lower" },
-  { value: "1", label: "Middle" },
-  { value: "2", label: "Upper" },
-];
-
 function generatePlayerSlug(firstName: string, lastName: string): string {
   const combined = `${firstName} ${lastName}`.trim();
   return combined
@@ -64,18 +67,19 @@ function generatePlayerSlug(firstName: string, lastName: string): string {
 
 export type PlayerFormHandle = { getPayload: () => Record<string, unknown>; isSaving: () => boolean };
 
-export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function PlayerForm({ clubId, clubSlug, skillType, player, onSave, hideActions, formId }, ref) {
+export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function PlayerForm({ clubId, clubSlug, skillType, tiers, player, onSave, hideActions, formId }, ref) {
   const router = useRouter();
 
   const [firstName, setFirstName] = useState<string>(player?.first_name ?? "");
   const [lastName, setLastName] = useState<string>(player?.last_name ?? "");
   const [skillLevel, setSkillLevel] = useState<number>(player?.numerical_skill_level ?? 5);
-  // Start with empty tier when not set to force user to explicitly choose
-  const [tierSkillLevel, setTierSkillLevel] = useState<string>(player?.tier_skill_level != null ? String(player!.tier_skill_level) : "");
+  const [skillTierId, setSkillTierId] = useState<string>(player?.skill_tier_id ?? "");
   const [gender, setGender] = useState<string>(String(player?.gender ?? 0));
   const [playStyle, setPlayStyle] = useState<string>(String(player?.play_style_preference ?? 0));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const sortedTiers = [...tiers].sort((a, b) => a.display_order - b.display_order);
 
   const getPayload = () => {
     const fullName = [firstName, lastName].filter((n) => (n ?? "").trim() !== "").join(" ").trim();
@@ -84,7 +88,7 @@ export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function
       last_name: lastName?.trim() ?? null,
       name: fullName,
       numerical_skill_level: skillType === 0 ? skillLevel : null,
-      tier_skill_level: skillType === 1 ? (tierSkillLevel === "" ? null : Number(tierSkillLevel)) : null,
+      skill_tier_id: skillType === 1 ? (skillTierId === "" ? null : skillTierId) : null,
       gender: Number(gender),
       play_style_preference: Number(playStyle),
     };
@@ -106,25 +110,25 @@ export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function
     const payloadWithSlug = { ...payload, slug };
 
     const supabase = createClient();
-    
+
     const fullName = `${payload.first_name} ${payload.last_name}`.trim().toLowerCase();
     const { data: existingPlayers } = await supabase
       .from("players")
       .select("id, first_name, last_name")
       .eq("club_id", clubId);
-    
+
     const isDuplicate = existingPlayers?.some(p => {
       if (player?.id && p.id === player.id) return false;
       const existingFullName = `${p.first_name} ${p.last_name}`.trim().toLowerCase();
       return existingFullName === fullName;
     });
-    
+
     if (isDuplicate) {
       setError("A player with this name already exists in this club.");
       setSaving(false);
       return;
     }
-    
+
     if (player?.id) {
       const result = await supabase.from("players").update(payloadWithSlug).eq("id", player.id);
       if (result.error) {
@@ -172,13 +176,13 @@ export const PlayerForm = forwardRef<PlayerFormHandle, PlayerFormProps>(function
       ) : (
         <div className="space-y-2">
           <Label>Skill Tier</Label>
-          <Select value={tierSkillLevel} onValueChange={setTierSkillLevel}>
+          <Select value={skillTierId} onValueChange={setSkillTierId}>
             <SelectTrigger>
               <SelectValue placeholder="Not set" />
             </SelectTrigger>
             <SelectContent>
-              {tierSkillOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              {sortedTiers.map((tier) => (
+                <SelectItem key={tier.id} value={tier.id}>{tier.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>

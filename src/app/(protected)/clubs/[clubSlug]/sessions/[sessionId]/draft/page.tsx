@@ -58,7 +58,7 @@ export default async function DraftSessionPage({
 
   const { data: availablePlayers } = await supabase
     .from("players")
-    .select("id, name, numerical_skill_level, tier_skill_level, gender")
+    .select("id, name, numerical_skill_level, skill_tier_id, gender, skill_tier:club_skill_tiers(name)")
     .eq("club_id", club.id);
 
   const { data: sessionPlayersRaw } = await supabase
@@ -72,15 +72,24 @@ export default async function DraftSessionPage({
     .eq("session_id", sessionId);
 
   const playerIds = sessionPlayersRaw?.map((sp) => sp.player_id) || [];
-  
-  let sessionPlayerDetails: Array<{ id: string; name: string; numerical_skill_level: number | null; tier_skill_level: number | null; gender: number }> = [];
+
+  let sessionPlayerDetails: Array<{ id: string; name: string; numerical_skill_level: number | null; skill_tier_id: string | null; skill_tier: { name: string } | null; gender: number }> = [];
   if (playerIds.length > 0) {
     const { data: playersData } = await supabase
       .from("players")
-      .select("id, name, numerical_skill_level, tier_skill_level, gender")
+      .select("id, name, numerical_skill_level, skill_tier_id, gender, skill_tier:club_skill_tiers(name)")
       .in("id", playerIds);
-    sessionPlayerDetails = playersData || [];
+    sessionPlayerDetails = (playersData || []).map((p) => ({
+      ...p,
+      skill_tier: p.skill_tier as unknown as { name: string } | null,
+    }));
   }
+
+  // Normalize skill_tier from Supabase join (may be array or object)
+  const normalizedAvailablePlayers = (availablePlayers || []).map((p) => ({
+    ...p,
+    skill_tier: Array.isArray(p.skill_tier) ? (p.skill_tier[0] ?? null) : (p.skill_tier as { name: string } | null),
+  }));
 
   const sessionPlayers = (sessionPlayersRaw || []).map((sp) => {
     const player = sessionPlayerDetails.find((p) => p.id === sp.player_id);
@@ -98,7 +107,7 @@ export default async function DraftSessionPage({
       gameType={club.game_type}
       skillType={club.skill_type}
       session={session}
-      availablePlayers={availablePlayers || []}
+      availablePlayers={normalizedAvailablePlayers}
       sessionPlayers={sessionPlayers}
       courtLabels={courtLabels || []}
     />

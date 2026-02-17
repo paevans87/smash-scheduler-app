@@ -16,7 +16,7 @@ import { SkillMeasurementSection } from "./skill-measurement-section";
 import { SubscriptionCard } from "./subscription-card";
 import { DeleteClubSection } from "./delete-club-section";
 import { getClubSubscription } from "@/lib/auth/gates";
-import { canUseCustomMatchmakingProfiles } from "@/lib/subscription/restrictions";
+import { canUseCustomMatchmakingProfiles, canUseCustomSkillTiers } from "@/lib/subscription/restrictions";
 import { fetchProPrices } from "@/lib/stripe-prices";
 
 type MatchMakingProfile = {
@@ -78,7 +78,7 @@ export default async function ClubManagementPage({
     redirect("/clubs");
   }
 
-  const [subscription, { data: clubProfiles }, { data: defaultProfiles }, { data: subRecord }] = await Promise.all([
+  const [subscription, { data: clubProfiles }, { data: defaultProfiles }, { data: subRecord }, { count: playerCount }, { data: defaultTiers }, { data: clubTiers }] = await Promise.all([
     getClubSubscription(club.id),
     supabase
       .from("match_making_profiles")
@@ -95,6 +95,20 @@ export default async function ClubManagementPage({
       .select("status, plan_type, current_period_end, stripe_subscription_id, cancel_at_period_end")
       .eq("club_id", club.id)
       .single(),
+    supabase
+      .from("players")
+      .select("id", { count: "exact", head: true })
+      .eq("club_id", club.id),
+    supabase
+      .from("club_skill_tiers")
+      .select("*")
+      .is("club_id", null)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("club_skill_tiers")
+      .select("*")
+      .eq("club_id", club.id)
+      .order("display_order", { ascending: true }),
   ]);
 
   const profiles = [
@@ -104,6 +118,7 @@ export default async function ClubManagementPage({
 
   const planType = subscription?.planType ?? "free";
   const canCreateCustomProfiles = canUseCustomMatchmakingProfiles(planType);
+  const canCreateCustomTiers = canUseCustomSkillTiers(planType);
 
   let monthlyAmount: string | null = null;
   if (planType === "pro") {
@@ -156,6 +171,10 @@ export default async function ClubManagementPage({
             clubId={club.id}
             clubSlug={clubSlug}
             currentSkillType={club.skill_type}
+            playerCount={playerCount ?? 0}
+            defaultTiers={defaultTiers ?? []}
+            clubTiers={clubTiers ?? []}
+            canCreateCustomTiers={canCreateCustomTiers}
           />
         </CardContent>
       </Card>

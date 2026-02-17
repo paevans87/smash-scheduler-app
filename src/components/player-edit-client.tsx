@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PlayerForm } from "@/components/player-form";
+import type { SkillTier } from "@/components/player-form";
 import { BlacklistManager } from "@/components/blacklist-manager";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +14,7 @@ type Player = {
   last_name: string;
   name?: string;
   numerical_skill_level: number | null;
-  tier_skill_level: number | null;
+  skill_tier_id: string | null;
   gender: number;
   play_style_preference: number;
 };
@@ -30,11 +31,12 @@ type PlayerEditClientProps = {
   playerId: string;
   playerSlug?: string;
   skillType: number;
+  tiers: SkillTier[];
 };
 
 const PLAYER_FORM_ID = "player-edit-form";
 
-export function PlayerEditClient({ clubId, clubSlug, playerId, skillType }: PlayerEditClientProps) {
+export function PlayerEditClient({ clubId, clubSlug, playerId, skillType, tiers }: PlayerEditClientProps) {
   const router = useRouter();
   const [player, setPlayer] = useState<Player | null>(null);
   const [partnerBlacklist, setPartnerBlacklist] = useState<BlacklistEntry[]>([]);
@@ -57,7 +59,7 @@ export function PlayerEditClient({ clubId, clubSlug, playerId, skillType }: Play
       const [{ data: playerData }, { data: blacklists }, { data: others }] = await Promise.all([
         supabase
           .from("players")
-          .select("id, first_name, last_name, name, numerical_skill_level, tier_skill_level, gender, play_style_preference")
+          .select("id, first_name, last_name, name, numerical_skill_level, skill_tier_id, gender, play_style_preference")
           .eq("id", playerId)
           .eq("club_id", clubId)
           .single(),
@@ -159,6 +161,7 @@ export function PlayerEditClient({ clubId, clubSlug, playerId, skillType }: Play
         clubId={clubId}
         clubSlug={clubSlug}
         skillType={skillType}
+        tiers={tiers}
         player={player}
         onSave={handleSaveBlacklist}
         hideActions

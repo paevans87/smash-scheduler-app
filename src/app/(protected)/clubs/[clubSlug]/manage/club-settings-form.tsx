@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,17 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 type Club = {
   id: string;
@@ -46,26 +35,12 @@ export function ClubSettingsForm({ club, clubSlug }: ClubSettingsFormProps) {
   const [name, setName] = useState(club.name);
   const [defaultCourtCount, setDefaultCourtCount] = useState(club.default_court_count);
   const [gameType, setGameType] = useState(club.game_type.toString());
-  const [skillType, setSkillType] = useState(club.skill_type.toString());
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingSkillType, setPendingSkillType] = useState<number | null>(null);
-  const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const isValid = name.trim() !== "" && defaultCourtCount >= 1;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValid) return;
-
-    // If skill type would change, show confirmation dialog
-    const newSkillType = parseInt(skillType);
-    if (newSkillType !== club.skill_type) {
-      setPendingSkillType(newSkillType);
-      setConfirmOpen(true);
-      // open dialog via hidden trigger
-      requestAnimationFrame(() => confirmBtnRef.current?.click());
-      return;
-    }
 
     setIsLoading(true);
     try {
@@ -75,7 +50,6 @@ export function ClubSettingsForm({ club, clubSlug }: ClubSettingsFormProps) {
           name: name.trim(),
           default_court_count: defaultCourtCount,
           game_type: parseInt(gameType),
-          skill_type: parseInt(skillType),
         })
         .eq("id", club.id);
 
@@ -91,50 +65,8 @@ export function ClubSettingsForm({ club, clubSlug }: ClubSettingsFormProps) {
     }
   }
 
-  async function confirmSkillTypeChange() {
-    // Commit the pending skill type change
-    if (pendingSkillType == null) return;
-    setConfirmOpen(false);
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from("clubs")
-        .update({
-          name: name.trim(),
-          default_court_count: defaultCourtCount,
-          game_type: parseInt(gameType),
-          skill_type: pendingSkillType,
-        })
-        .eq("id", club.id);
-      if (error) throw error;
-      router.refresh();
-    } catch {
-      // ignore
-    } finally {
-      setIsLoading(false);
-      setPendingSkillType(null);
-    }
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <button ref={confirmBtnRef} className="sr-only" aria-label="confirm-skill-change" />
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Skill Measurement Change</AlertDialogTitle>
-          </AlertDialogHeader>
-          <AlertDialogDescription>
-            Changing the skill measurement type will require updating all players' skill data. This may affect how players are displayed and filtered. Do you want to proceed?
-          </AlertDialogDescription>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={async () => { await confirmSkillTypeChange(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Proceed</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Club Name</Label>

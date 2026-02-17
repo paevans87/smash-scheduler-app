@@ -38,7 +38,8 @@ type Player = {
   first_name?: string;
   last_name?: string;
   numerical_skill_level: number | null;
-  tier_skill_level: number | null;
+  skill_tier_id: string | null;
+  skill_tier: { name: string } | null;
   gender: number;
 };
 
@@ -376,7 +377,7 @@ export function DraftSessionClient({
                   <div>
                     <p className="font-medium">{player.name ?? `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim()}</p>
                     <p className="text-xs text-muted-foreground">
-                      Skill: {skillType === 0 ? player.numerical_skill_level : player.tier_skill_level === 0 ? 'Lower' : player.tier_skill_level === 2 ? 'Upper' : 'Middle'}
+                      Skill: {skillType === 0 ? player.numerical_skill_level : player.skill_tier?.name ?? 'Not set'}
                     </p>
                   </div>
                   <Button
@@ -420,7 +421,7 @@ export function DraftSessionClient({
                       {sessionPlayer.players.name ?? `${sessionPlayer.players.first_name ?? ''} ${sessionPlayer.players.last_name ?? ''}`.trim()}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Skill: {skillType === 0 ? sessionPlayer.players.numerical_skill_level : sessionPlayer.players.tier_skill_level === 0 ? 'Lower' : sessionPlayer.players.tier_skill_level === 2 ? 'Upper' : 'Middle'}
+                        Skill: {skillType === 0 ? sessionPlayer.players.numerical_skill_level : sessionPlayer.players.skill_tier?.name ?? 'Not set'}
                       </p>
                     </div>
                     <Button

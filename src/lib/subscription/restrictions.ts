@@ -41,6 +41,10 @@ export const RESTRICTIONS = {
     FREE: false,
     PRO: true,
   },
+  CUSTOM_SKILL_TIERS: {
+    FREE: false,
+    PRO: true,
+  },
 } as const;
 
 export function canCreateClub(currentClubCount: number, planType: PlanType): boolean {
@@ -85,6 +89,10 @@ export function canExportCsv(planType: PlanType): boolean {
 
 export function canUseBranding(planType: PlanType): boolean {
   return planType === "pro" ? RESTRICTIONS.BRANDING.PRO : RESTRICTIONS.BRANDING.FREE;
+}
+
+export function canUseCustomSkillTiers(planType: PlanType): boolean {
+  return planType === "pro" ? RESTRICTIONS.CUSTOM_SKILL_TIERS.PRO : RESTRICTIONS.CUSTOM_SKILL_TIERS.FREE;
 }
 
 export function getAnalyticsLevel(planType: PlanType): "minimal" | "advanced" {

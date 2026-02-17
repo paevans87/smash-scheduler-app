@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Crown, UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PlayerCard } from "@/components/player-card";
 import { canAddPlayer } from "@/lib/subscription/restrictions";
 import type { PlanType } from "@/lib/subscription/hooks";
+import type { SkillTier } from "@/components/player-form";
 
 type Player = {
   id: string;
@@ -21,7 +22,7 @@ type Player = {
   last_name: string;
   name?: string;
   numerical_skill_level: number | null;
-  tier_skill_level: number | null;
+  skill_tier_id: string | null;
   gender: number;
   play_style_preference: number;
 };
@@ -50,7 +51,7 @@ function usePlayers(clubId: string): UsePlayersResult {
         const supabase = createClient();
         const { data } = await supabase
           .from("players")
-          .select("id, club_id, slug, first_name, last_name, name, numerical_skill_level, tier_skill_level, gender, play_style_preference")
+          .select("id, club_id, slug, first_name, last_name, name, numerical_skill_level, skill_tier_id, gender, play_style_preference")
           .eq("club_id", clubId)
           .order("name");
 
@@ -90,9 +91,10 @@ type PlayerListClientProps = {
   planType: PlanType;
   playerCount: number;
   skillType: number;
+  tiers: SkillTier[];
 };
 
-export function PlayerListClient({ clubId, clubSlug, planType, playerCount, skillType }: PlayerListClientProps) {
+export function PlayerListClient({ clubId, clubSlug, planType, playerCount, skillType, tiers }: PlayerListClientProps) {
   const { players, isLoading, mutate } = usePlayers(clubId);
 
   const handleDeleted = useCallback(() => {
@@ -100,12 +102,16 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount, skil
   }, [mutate]);
 
   const canAddMore = canAddPlayer(playerCount, planType);
-  const maxPlayers = planType === "pro" ? "unlimited" : "16";
+
+  // Build a lookup map for tier names
+  const tierMap = new Map(tiers.map((t) => [t.id, t]));
 
   const [searchText, setSearchText] = useState<string>("");
   const [genderFilter, setGenderFilter] = useState<string>("any");
   const [minSkill, setMinSkill] = useState<number>(1);
   const [tierFilter, setTierFilter] = useState<string>("any");
+
+  const sortedTiers = [...tiers].sort((a, b) => a.display_order - b.display_order);
 
   const filteredPlayers = players.filter((p) => {
     const name = [p?.first_name, p?.last_name].filter(Boolean).length
@@ -116,14 +122,10 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount, skil
     const g = (p?.gender ?? 2).toString();
     if (genderFilter !== "any" && g !== genderFilter) return false;
     if (skillType === 1) {
-      // Tier mode: filter by exact tier when a specific tier is chosen
       if (tierFilter !== "any") {
-        const targetTier = Number(tierFilter);
-        const tierVal = p?.tier_skill_level;
-        if (tierVal == null || tierVal !== targetTier) return false;
+        if (p?.skill_tier_id !== tierFilter) return false;
       }
     } else {
-      // Numeric mode
       const skill = p?.numerical_skill_level;
       if (skill !== null && skill !== undefined && skill < minSkill) return false;
     }
@@ -220,9 +222,9 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount, skil
                 <SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="any">Any</SelectItem>
-                  <SelectItem value="0">Lower</SelectItem>
-                  <SelectItem value="1">Middle</SelectItem>
-                  <SelectItem value="2">Upper</SelectItem>
+                  {sortedTiers.map((tier) => (
+                    <SelectItem key={tier.id} value={tier.id}>{tier.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -248,6 +250,7 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount, skil
             const displayName = [player?.first_name, player?.last_name].filter(Boolean).length
               ? `${player?.first_name ?? ''} ${player?.last_name ?? ''}`.trim()
               : player?.name ?? '';
+            const tier = player.skill_tier_id ? tierMap.get(player.skill_tier_id) : null;
             return (
               <PlayerCard
                 key={player.id}
@@ -255,7 +258,8 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount, skil
                 slug={player.slug}
                 name={displayName}
                 skillLevel={player.numerical_skill_level}
-                tierSkillLevel={player.tier_skill_level}
+                skillTierId={player.skill_tier_id}
+                tierName={tier?.name ?? null}
                 gender={player.gender}
                 clubSlug={clubSlug}
                 skillType={skillType}

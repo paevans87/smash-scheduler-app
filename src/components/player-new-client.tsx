@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { PlayerForm } from "@/components/player-form";
+import type { SkillTier } from "@/components/player-form";
 import { BlacklistManager } from "@/components/blacklist-manager";
 import { Button } from "@/components/ui/button";
 
@@ -11,11 +12,12 @@ type PlayerNewClientProps = {
   clubId: string;
   clubSlug: string;
   skillType: number;
+  tiers: SkillTier[];
 };
 
 const PLAYER_FORM_ID = "player-new-form";
 
-export function PlayerNewClient({ clubId, clubSlug, skillType }: PlayerNewClientProps) {
+export function PlayerNewClient({ clubId, clubSlug, skillType, tiers }: PlayerNewClientProps) {
   const router = useRouter();
   const [otherPlayers, setOtherPlayers] = useState<{ id: string; name: string }[]>([]);
   const [pendingBlacklistChanges, setPendingBlacklistChanges] = useState<{
@@ -60,6 +62,7 @@ export function PlayerNewClient({ clubId, clubSlug, skillType }: PlayerNewClient
         clubId={clubId}
         clubSlug={clubSlug}
         skillType={skillType}
+        tiers={tiers}
         onSave={handleSaveBlacklist}
         hideActions
         formId={PLAYER_FORM_ID}

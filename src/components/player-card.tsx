@@ -11,7 +11,8 @@ type PlayerCardProps = {
   slug: string;
   name: string;
   skillLevel: number | null;
-  tierSkillLevel: number | null;
+  skillTierId: string | null;
+  tierName: string | null;
   gender: number;
   clubSlug: string;
   skillType: number;
@@ -24,22 +25,18 @@ const genderColours: Record<number, string> = {
   2: "var(--smash-gender-other)",
 };
 
-const tierLabels: Record<number, string> = {
-  0: "Lower",
-  1: "Middle",
-  2: "Upper",
-};
-
-const tierColours: Record<number, string> = {
-  0: "var(--smash-error)",
-  1: "var(--smash-warning)",
-  2: "var(--smash-success)",
-};
-
 function getSkillColour(level: number): string {
   if (level <= 3) return "var(--smash-error)";
   if (level <= 6) return "var(--smash-warning)";
   if (level <= 9) return "var(--smash-success)";
+  return "var(--primary)";
+}
+
+function getTierColour(tierName: string): string {
+  const lower = tierName.toLowerCase();
+  if (lower === "lower") return "var(--smash-error)";
+  if (lower === "middle") return "var(--smash-warning)";
+  if (lower === "upper") return "var(--smash-success)";
   return "var(--primary)";
 }
 
@@ -52,9 +49,8 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-export function PlayerCard({ id, slug, name, skillLevel, tierSkillLevel, gender, clubSlug, skillType, onDeleted }: PlayerCardProps) {
-  // If in numeric mode, flag when numerical skill is missing; if in tier mode, flag when tier is missing
-  const needsAttention = skillType === 0 ? skillLevel == null : tierSkillLevel == null;
+export function PlayerCard({ id, slug, name, skillLevel, skillTierId, tierName, gender, clubSlug, skillType, onDeleted }: PlayerCardProps) {
+  const needsAttention = skillType === 0 ? skillLevel == null : skillTierId == null;
 
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
@@ -80,16 +76,16 @@ export function PlayerCard({ id, slug, name, skillLevel, tierSkillLevel, gender,
             {skillLevel}
           </span>
         ) : (
-          tierSkillLevel == null ? (
+          tierName == null ? (
             <Badge className="shrink-0 text-xs font-medium text-white" style={{ backgroundColor: "var(--amber-500)" }}>
               Not set
             </Badge>
           ) : (
             <Badge
               className="shrink-0 text-xs font-medium text-white"
-              style={{ backgroundColor: tierColours[tierSkillLevel ?? 1] }}
+              style={{ backgroundColor: getTierColour(tierName) }}
             >
-              {tierLabels[tierSkillLevel ?? 1]}
+              {tierName}
             </Badge>
           )
         )}

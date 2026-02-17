@@ -25,13 +25,25 @@ export default async function NewPlayerPage({ params }: NewPlayerPageProps) {
     redirect("/clubs");
   }
 
-  const [subscription, { count: playerCount }] = await Promise.all([
+  const [subscription, { count: playerCount }, { data: clubTiers }, { data: defaultTiers }] = await Promise.all([
     getClubSubscription(club.id),
     supabase
       .from("players")
       .select("id", { count: "exact", head: true })
       .eq("club_id", club.id),
+    supabase
+      .from("club_skill_tiers")
+      .select("*")
+      .eq("club_id", club.id)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("club_skill_tiers")
+      .select("*")
+      .is("club_id", null)
+      .order("display_order", { ascending: true }),
   ]);
+
+  const tiers = (clubTiers && clubTiers.length > 0) ? clubTiers : (defaultTiers ?? []);
 
   const planType = subscription?.planType ?? "free";
   const canAdd = canAddPlayer(playerCount ?? 0, planType);
@@ -68,5 +80,5 @@ export default async function NewPlayerPage({ params }: NewPlayerPageProps) {
     );
   }
 
-  return <PlayerNewClient clubId={club.id} clubSlug={clubSlug} skillType={club.skill_type} />;
+  return <PlayerNewClient clubId={club.id} clubSlug={clubSlug} skillType={club.skill_type} tiers={tiers} />;
 }

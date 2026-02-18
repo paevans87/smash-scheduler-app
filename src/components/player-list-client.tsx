@@ -155,7 +155,10 @@ export function PlayerListClient({ clubId, clubSlug, planType, playerCount, skil
   return (
     <div className="space-y-6 px-4 py-6 md:px-6">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-3xl font-bold">Players</h1>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Players</h1>
+          <p className="text-muted-foreground">Manage your club players</p>
+        </div>
         {canAddMore ? (
           <Link href={`/clubs/${clubSlug}/players/new`} className="inline-flex items-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-[var(--shadow-md)]">
             <UserPlus className="size-4" /> Add Player

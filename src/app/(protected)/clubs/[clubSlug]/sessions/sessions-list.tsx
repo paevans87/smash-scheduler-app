@@ -16,7 +16,6 @@ import { useState, useEffect, useCallback } from "react";
 type Session = {
   id: string;
   club_id: string;
-  slug: string;
   scheduled_date_time: string;
   court_count: number;
   state: number;
@@ -46,7 +45,7 @@ function useSessions(clubId: string): UseSessionsResult {
       const supabase = createClient();
       const { data } = await supabase
         .from("sessions")
-        .select("id, club_id, slug, scheduled_date_time, court_count, state")
+        .select("id, club_id, scheduled_date_time, court_count, state")
         .eq("club_id", clubId)
         .order("scheduled_date_time", { ascending: false });
 

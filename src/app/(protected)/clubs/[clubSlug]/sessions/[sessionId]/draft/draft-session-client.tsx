@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getDb, seedSession, seedSessionPlayers, seedCourtLabels } from "@/lib/db/index";
+import { enqueueMutation, processQueue } from "@/lib/db/sync";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -70,6 +72,11 @@ type DraftSessionClientProps = {
   courtLabels: CourtLabel[];
 };
 
+const genderColours: Record<number, string> = {
+  0: "var(--smash-gender-male)",
+  1: "var(--smash-gender-female)",
+};
+
 export function DraftSessionClient({
   sessionId,
   clubSlug,
@@ -98,6 +105,22 @@ export function DraftSessionClient({
     setCurrentSessionPlayers(sessionPlayers);
   }, [sessionPlayers]);
 
+  // Seed IndexedDB on mount so mutations can work offline
+  useEffect(() => {
+    seedSession({
+      id: session.id,
+      club_id: "",
+      scheduled_date_time: session.scheduled_date_time,
+      court_count: session.court_count,
+      state: session.state,
+    });
+    seedSessionPlayers(
+      sessionId,
+      sessionPlayers.map((sp) => ({ player_id: sp.player_id, is_active: sp.is_active }))
+    );
+    seedCourtLabels(sessionId, courtLabels);
+  }, [session, sessionId, sessionPlayers, courtLabels]);
+
   const scheduledDate = new Date(session.scheduled_date_time);
 
   const minPlayers = gameType === 0 ? 2 : 4;
@@ -110,11 +133,11 @@ export function DraftSessionClient({
   const canCreateSession = activePlayerCount >= minPlayers;
 
   const sessionPlayerIds = new Set(currentSessionPlayers.map((sp) => sp.player_id));
-  
+
   const actuallyAvailablePlayers = availablePlayers.filter(
     (player) => !sessionPlayerIds.has(player.id)
   );
-  
+
   const filteredAvailablePlayers = actuallyAvailablePlayers.filter((player) => {
     const nm = (player.name ?? "").toLowerCase();
     return nm.includes(searchText.toLowerCase());
@@ -123,15 +146,25 @@ export function DraftSessionClient({
   async function handleAddPlayer(playerId: string) {
     setIsLoading(true);
     try {
-      const sessionPlayerData = {
+      // Write to IDB
+      const db = await getDb();
+      await db.put("session_players", {
         session_id: sessionId,
         player_id: playerId,
         is_active: true,
-      };
+      });
 
-      const { error } = await supabase.from("session_players").insert(sessionPlayerData);
-      if (error) throw error;
+      // Queue sync (upsert is idempotent if re-sent)
+      await enqueueMutation("session_players", "upsert", {
+        session_id: sessionId,
+        player_id: playerId,
+        is_active: true,
+      });
 
+      // Attempt immediate sync (silently fails if offline)
+      processQueue(supabase).catch(() => {});
+
+      // Optimistic UI update
       const player = availablePlayers.find((p) => p.id === playerId);
       if (player) {
         setCurrentSessionPlayers([
@@ -149,13 +182,17 @@ export function DraftSessionClient({
   async function handleRemovePlayer(playerId: string) {
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from("session_players")
-        .delete()
-        .eq("session_id", sessionId)
-        .eq("player_id", playerId);
+      // Write to IDB
+      const db = await getDb();
+      await db.delete("session_players", [sessionId, playerId]);
 
-      if (error) throw error;
+      // Queue sync
+      await enqueueMutation("session_players", "delete", undefined, {
+        session_id: sessionId,
+        player_id: playerId,
+      });
+
+      processQueue(supabase).catch(() => {});
 
       setCurrentSessionPlayers(
         currentSessionPlayers.filter((sp) => sp.player_id !== playerId)
@@ -172,12 +209,20 @@ export function DraftSessionClient({
     setCourtCount(newCount);
 
     try {
-      const { error } = await supabase
-        .from("sessions")
-        .update({ court_count: newCount })
-        .eq("id", sessionId);
+      const db = await getDb();
+      const existing = await db.get("sessions", sessionId);
+      if (existing) {
+        await db.put("sessions", { ...existing, court_count: newCount });
+      }
 
-      if (error) throw error;
+      await enqueueMutation(
+        "sessions",
+        "update",
+        { court_count: newCount },
+        { id: sessionId }
+      );
+
+      processQueue(supabase).catch(() => {});
     } catch {
       console.error("Failed to update court count");
     }
@@ -191,19 +236,28 @@ export function DraftSessionClient({
     setLabels(newLabels);
 
     try {
+      const db = await getDb();
+
       if (label.trim()) {
-        await supabase.from("session_court_labels").upsert({
+        await db.put("session_court_labels", {
+          session_id: sessionId,
+          court_number: courtNumber,
+          label: label.trim(),
+        });
+        await enqueueMutation("session_court_labels", "upsert", {
           session_id: sessionId,
           court_number: courtNumber,
           label: label.trim(),
         });
       } else {
-        await supabase
-          .from("session_court_labels")
-          .delete()
-          .eq("session_id", sessionId)
-          .eq("court_number", courtNumber);
+        await db.delete("session_court_labels", [sessionId, courtNumber]);
+        await enqueueMutation("session_court_labels", "delete", undefined, {
+          session_id: sessionId,
+          court_number: courtNumber,
+        });
       }
+
+      processQueue(supabase).catch(() => {});
     } catch {
       console.error("Failed to update court label");
     }
@@ -212,12 +266,14 @@ export function DraftSessionClient({
   async function handleAbandonDraft() {
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from("sessions")
-        .delete()
-        .eq("id", sessionId);
+      // Remove from IDB
+      const db = await getDb();
+      await db.delete("sessions", sessionId);
 
-      if (error) throw error;
+      await enqueueMutation("sessions", "delete", undefined, { id: sessionId });
+
+      // Abandon requires online (navigates to server-rendered sessions list)
+      await processQueue(supabase);
 
       router.push(`/clubs/${clubSlug}/sessions`);
       router.refresh();
@@ -231,12 +287,22 @@ export function DraftSessionClient({
 
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from("sessions")
-        .update({ state: 1, court_count: courtCount })
-        .eq("id", sessionId);
+      // Write state change to IDB
+      const db = await getDb();
+      const existing = await db.get("sessions", sessionId);
+      if (existing) {
+        await db.put("sessions", { ...existing, state: 1, court_count: courtCount });
+      }
 
-      if (error) throw error;
+      await enqueueMutation(
+        "sessions",
+        "update",
+        { state: 1, court_count: courtCount },
+        { id: sessionId }
+      );
+
+      // Activating the session requires online (navigates to server-rendered active page)
+      await processQueue(supabase);
 
       router.push(`/clubs/${clubSlug}/sessions/${sessionId}/active`);
       router.refresh();
@@ -246,8 +312,8 @@ export function DraftSessionClient({
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-start justify-between">
+    <div className="space-y-6 px-4 py-6 md:px-6 overflow-x-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Session Draft</h1>
           <p className="text-muted-foreground">
@@ -368,17 +434,23 @@ export function DraftSessionClient({
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            <div className="space-y-2 max-h-[400px] overflow-y-auto overflow-x-hidden">
               {filteredAvailablePlayers.map((player) => (
-                  <div
+                <div
                   key={player.id}
                   className="flex items-center justify-between rounded-md border p-2"
                 >
-                  <div>
-                    <p className="font-medium">{player.name ?? `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim()}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Skill: {skillType === 0 ? player.numerical_skill_level : player.skill_tier?.name ?? 'Not set'}
-                    </p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="h-4 w-4 rounded-full shrink-0"
+                      style={{ backgroundColor: genderColours[player.gender ?? 2] }}
+                    />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{player.name ?? `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim()}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Skill: {skillType === 0 ? player.numerical_skill_level : player.skill_tier?.name ?? 'Not set'}
+                      </p>
+                    </div>
                   </div>
                   <Button
                     size="sm"
@@ -408,7 +480,7 @@ export function DraftSessionClient({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            <div className="space-y-2 max-h-[400px] overflow-y-auto overflow-x-hidden">
               {currentSessionPlayers
                 .filter((sp): sp is typeof sp & { players: Player } => !!sp.players)
                 .map((sessionPlayer) => (
@@ -416,13 +488,19 @@ export function DraftSessionClient({
                     key={sessionPlayer.player_id}
                     className="flex items-center justify-between rounded-md border p-2"
                   >
-                    <div>
-                      <p className="font-medium">
-                      {sessionPlayer.players.name ?? `${sessionPlayer.players.first_name ?? ''} ${sessionPlayer.players.last_name ?? ''}`.trim()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Skill: {skillType === 0 ? sessionPlayer.players.numerical_skill_level : sessionPlayer.players.skill_tier?.name ?? 'Not set'}
-                      </p>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="h-4 w-4 rounded-full shrink-0"
+                        style={{ backgroundColor: genderColours[sessionPlayer.players.gender ?? 2] }}
+                      />
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">
+                          {sessionPlayer.players.name ?? `${sessionPlayer.players.first_name ?? ''} ${sessionPlayer.players.last_name ?? ''}`.trim()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Skill: {skillType === 0 ? sessionPlayer.players.numerical_skill_level : sessionPlayer.players.skill_tier?.name ?? 'Not set'}
+                        </p>
+                      </div>
                     </div>
                     <Button
                       size="sm"
@@ -450,7 +528,7 @@ export function DraftSessionClient({
         </div>
       )}
 
-      <div className="flex justify-between pt-4">
+      <div className="flex flex-wrap justify-between gap-2 pt-4">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="outline" disabled={isLoading}>

@@ -112,7 +112,7 @@ export function ClubSettingsForm({ club, clubSlug }: ClubSettingsFormProps) {
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <Button type="submit" disabled={!isValid || isLoading}>
           {isLoading ? "Saving..." : "Save Changes"}
         </Button>

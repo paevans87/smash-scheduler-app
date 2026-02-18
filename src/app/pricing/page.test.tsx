@@ -26,6 +26,7 @@ describe("PricingContent", () => {
         proPrices={[]}
         stripeFetchError={true}
         canCreateFreeClub={true}
+        canStartTrial={true}
       />
     );
 
@@ -40,6 +41,7 @@ describe("PricingContent", () => {
         proPrices={[]}
         stripeFetchError={true}
         canCreateFreeClub={true}
+        canStartTrial={true}
       />
     );
 
@@ -53,6 +55,7 @@ describe("PricingContent", () => {
         proPrices={[]}
         stripeFetchError={true}
         canCreateFreeClub={true}
+        canStartTrial={true}
       />
     );
 
@@ -70,6 +73,7 @@ describe("PricingContent", () => {
         proPrices={[]}
         stripeFetchError={true}
         canCreateFreeClub={true}
+        canStartTrial={true}
       />
     );
 
@@ -87,6 +91,7 @@ describe("PricingContent", () => {
         proPrices={[]}
         stripeFetchError={true}
         canCreateFreeClub={true}
+        canStartTrial={true}
       />
     );
 
@@ -108,6 +113,7 @@ describe("PricingContent", () => {
         proPrices={[]}
         stripeFetchError={true}
         canCreateFreeClub={false}
+        canStartTrial={true}
       />
     );
 
@@ -128,6 +134,7 @@ describe("PricingContent", () => {
         proPrices={[]}
         stripeFetchError={true}
         canCreateFreeClub={true}
+        canStartTrial={true}
       />
     );
 
@@ -149,6 +156,7 @@ describe("PricingContent", () => {
         proPrices={[]}
         stripeFetchError={true}
         canCreateFreeClub={true}
+        canStartTrial={true}
       />
     );
 

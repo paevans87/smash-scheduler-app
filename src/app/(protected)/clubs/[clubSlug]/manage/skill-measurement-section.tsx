@@ -207,7 +207,7 @@ export function SkillMeasurementSection({
           </p>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
           <Button type="submit" disabled={isLoading || skillType === currentSkillType.toString()}>
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
@@ -217,7 +217,7 @@ export function SkillMeasurementSection({
       {/* Tier list - shown when skill type is Tier */}
       {skillType === "1" && (
         <div className="mt-6 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h4 className="text-sm font-medium">
               {hasCustomTiers ? "Custom Tiers" : "Default Tiers"}
             </h4>

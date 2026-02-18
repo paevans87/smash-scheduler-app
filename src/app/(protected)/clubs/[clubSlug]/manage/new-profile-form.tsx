@@ -60,6 +60,9 @@ export function NewProfileForm({ clubId, clubSlug }: NewProfilePageProps) {
         apply_gender_matching: applyGenderMatching,
         gender_matching_mode: parseInt(genderMatchingMode),
         blacklist_mode: parseInt(blacklistMode),
+        level_multiplier: 1.12,
+        mix_multiplier: 1.04,
+        asymmetric_gender_multiplier: 0.9,
       });
 
       if (error) {

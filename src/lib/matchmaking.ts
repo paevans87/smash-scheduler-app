@@ -28,6 +28,9 @@ export type MatchConfig = {
   applyGenderMatching: boolean; // Whether gender matching is enabled at all
   genderMatchingMode: number; // 0=preferred (soft 0.5× penalty), 1=strict (hard filter)
   blacklistMode: number; // 0=off, 1=hard constraints applied
+  levelMultiplier?: number; // default: LEVEL_MULTIPLIER
+  mixMultiplier?: number; // default: MIX_MULTIPLIER
+  asymmetricGenderMultiplier?: number; // default: ASYMETRIC_GENDER_MULTIPLIER
 };
 
 export type MatchCandidate = {
@@ -180,7 +183,9 @@ function computeSoftMultiplier(
   });
   if (allSatisfied) {
     // Level games are the preferred default; give them a slightly larger nudge
-    multiplier *= matchStyle === 2 ? LEVEL_MULTIPLIER : MIX_MULTIPLIER;
+    const levelMult = config?.levelMultiplier ?? LEVEL_MULTIPLIER;
+    const mixMult = config?.mixMultiplier ?? MIX_MULTIPLIER;
+    multiplier *= matchStyle === 2 ? levelMult : mixMult;
   }
 
   // Soft asymmetric-arrangement nudge (preferred mode only)
@@ -189,7 +194,8 @@ function computeSoftMultiplier(
     config.genderMatchingMode === 0 &&
     !isGenderSymmetric(t1, t2)
   ) {
-    multiplier *= ASYMETRIC_GENDER_MULTIPLIER;
+    const asymMult = config?.asymmetricGenderMultiplier ?? ASYMETRIC_GENDER_MULTIPLIER;
+    multiplier *= asymMult;
   }
 
   return multiplier;

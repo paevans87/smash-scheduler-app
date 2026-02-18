@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { canScheduleSession } from "@/lib/subscription/restrictions";
 import type { PlanType } from "@/lib/subscription/hooks";
 
@@ -143,17 +144,23 @@ export function NewSessionForm({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="courts">Number of Courts</Label>
-            <Input
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="courts">Number of Courts</Label>
+              <span className="text-sm font-semibold tabular-nums">{courtCount}</span>
+            </div>
+            <Slider
               id="courts"
-              type="number"
               min={1}
-              max={20}
-              value={courtCount}
-              onChange={(e) => setCourtCount(parseInt(e.target.value) || 1)}
-              required
+              max={12}
+              step={1}
+              value={[courtCount]}
+              onValueChange={([v]) => setCourtCount(v)}
             />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>1</span>
+              <span>12</span>
+            </div>
           </div>
         </CardContent>
       </Card>

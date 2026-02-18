@@ -721,6 +721,28 @@ export function ActiveSessionClient({
   async function handleEndSession() {
     setIsEnding(true);
     try {
+      const now = new Date().toISOString();
+
+      // Complete all active (in-progress) matches as draws
+      const activeMatches = localMatches.filter((m) => m.state === 0);
+      for (const match of activeMatches) {
+        await enqueueMutation(
+          "matches",
+          "update",
+          { state: 1, completed_at: now, winning_team: null, team1_score: null, team2_score: null },
+          { id: match.id }
+        );
+      }
+      if (activeMatches.length > 0) {
+        setLocalMatches((prev) =>
+          prev.map((m) =>
+            m.state === 0
+              ? { ...m, state: 1, completed_at: now, winning_team: null, team1_score: null, team2_score: null }
+              : m
+          )
+        );
+      }
+
       await enqueueMutation(
         "sessions",
         "update",
@@ -971,10 +993,19 @@ export function ActiveSessionClient({
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>End Session?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {isOnline
-                    ? "Are you sure you want to end this session? This will mark it as complete."
-                    : "You are currently offline. The session will be marked complete locally and synced when your connection returns."}
+                <AlertDialogDescription asChild>
+                  <div className="space-y-2">
+                    {nInProgress > 0 && (
+                      <p className="text-amber-500 font-medium">
+                        {nInProgress} active {nInProgress === 1 ? "match" : "matches"} will be marked as a draw.
+                      </p>
+                    )}
+                    <p>
+                      {isOnline
+                        ? "Are you sure you want to end this session? This will mark it as complete."
+                        : "You are currently offline. The session will be marked complete locally and synced when your connection returns."}
+                    </p>
+                  </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

@@ -45,6 +45,10 @@ export const RESTRICTIONS = {
     FREE: false,
     PRO: true,
   },
+  MATCHMAKING_SIMULATOR: {
+    FREE: false,
+    PRO: true,
+  },
 } as const;
 
 export function canCreateClub(currentClubCount: number, planType: PlanType): boolean {
@@ -93,6 +97,10 @@ export function canUseBranding(planType: PlanType): boolean {
 
 export function canUseCustomSkillTiers(planType: PlanType): boolean {
   return planType === "pro" ? RESTRICTIONS.CUSTOM_SKILL_TIERS.PRO : RESTRICTIONS.CUSTOM_SKILL_TIERS.FREE;
+}
+
+export function canUseMatchmakingSimulator(planType: PlanType): boolean {
+  return planType === "pro" ? RESTRICTIONS.MATCHMAKING_SIMULATOR.PRO : RESTRICTIONS.MATCHMAKING_SIMULATOR.FREE;
 }
 
 export function getAnalyticsLevel(planType: PlanType): "minimal" | "advanced" {

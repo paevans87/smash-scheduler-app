@@ -16,8 +16,9 @@ import { SkillMeasurementSection } from "./skill-measurement-section";
 import { SubscriptionCard } from "./subscription-card";
 import { DeleteClubSection } from "./delete-club-section";
 import { getClubSubscription } from "@/lib/auth/gates";
-import { canUseCustomMatchmakingProfiles, canUseCustomSkillTiers } from "@/lib/subscription/restrictions";
+import { canUseCustomMatchmakingProfiles, canUseCustomSkillTiers, canUseMatchmakingSimulator } from "@/lib/subscription/restrictions";
 import { fetchProPrices } from "@/lib/stripe-prices";
+import { MatchmakingSimulatorDialog } from "@/components/matchmaking-simulator-dialog";
 
 type MatchMakingProfile = {
   id: string;
@@ -29,6 +30,9 @@ type MatchMakingProfile = {
   apply_gender_matching: boolean;
   gender_matching_mode: number;
   blacklist_mode: number;
+  level_multiplier: number;
+  mix_multiplier: number;
+  asymmetric_gender_multiplier: number;
 };
 
 type Club = {
@@ -120,6 +124,7 @@ export default async function ClubManagementPage({
   const planType = subscription?.planType ?? "free";
   const canCreateCustomProfiles = canUseCustomMatchmakingProfiles(planType);
   const canCreateCustomTiers = canUseCustomSkillTiers(planType);
+  const canSimulate = canUseMatchmakingSimulator(planType);
 
   let monthlyAmount: string | null = null;
   if (planType === "pro") {
@@ -198,6 +203,14 @@ export default async function ClubManagementPage({
                   <span className="text-sm">Pro feature</span>
                 </div>
               )}
+              <MatchmakingSimulatorDialog
+                profiles={profiles as MatchMakingProfile[]}
+                defaultProfileId={club.default_matchmaking_profile_id}
+                gameType={club.game_type}
+                clubId={club.id}
+                clubSlug={clubSlug}
+                disabled={!canSimulate}
+              />
               <Button asChild={canCreateCustomProfiles} disabled={!canCreateCustomProfiles}>
                 {canCreateCustomProfiles ? (
                   <Link href={`/clubs/${clubSlug}/manage/profiles/new`}>

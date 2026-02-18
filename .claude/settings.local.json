@@ -23,7 +23,8 @@
       "Bash(npx tsc:*)",
       "Bash(npm test:*)",
       "Bash(node -e:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git diff:*)"
     ]
   }
 }

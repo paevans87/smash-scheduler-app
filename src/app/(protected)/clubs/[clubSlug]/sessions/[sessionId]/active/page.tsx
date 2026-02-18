@@ -85,6 +85,9 @@ export default async function ActiveSessionPage({
     apply_gender_matching: boolean;
     gender_matching_mode: number;
     blacklist_mode: number;
+    level_multiplier: number;
+    mix_multiplier: number;
+    asymmetric_gender_multiplier: number;
   };
   type SkillTier = { id: string; name: string; score: number };
 

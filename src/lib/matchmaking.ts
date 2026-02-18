@@ -22,7 +22,8 @@ export type ScoringWeights = {
 };
 
 export type MatchConfig = {
-  applyGenderMatching: boolean; // Hard constraint: each team must have 1M+1F (doubles)
+  applyGenderMatching: boolean; // Whether gender matching is enabled at all
+  genderMatchingMode: number; // 0=preferred (soft 0.5× penalty), 1=strict (hard filter)
   blacklistMode: number; // 0=off, 1=hard constraints applied
 };
 
@@ -104,7 +105,8 @@ function isValidArrangement(
   t2: AlgorithmPlayer[],
   config: MatchConfig
 ): boolean {
-  if (config.applyGenderMatching && t1.length === 2) {
+  // Gender strict mode: filter out gender-imbalanced arrangements entirely
+  if (config.applyGenderMatching && config.genderMatchingMode === 1 && t1.length === 2) {
     if (!isGenderBalancedDoubles(t1, t2)) return false;
   }
   if (config.blacklistMode === 1 && hasBlacklistViolation(t1, t2)) return false;
@@ -136,21 +138,33 @@ function computeMatchStyle(
 }
 
 /**
- * Returns 1.2 if every player's play-style preference is satisfied by the
- * resulting match, otherwise 1.0.
+ * Computes a combined soft multiplier for a proposed match arrangement.
  *
- * Preference semantics:
- *   0 = Open  → satisfied by any match style
- *   1 = Mix   → satisfied when the match has mixed gender (style ≥ 1)
- *   2 = Level → satisfied only when teams are gender-balanced (style = 2)
+ * Two effects:
+ *
+ * 1. Play-style preference bonus (×1.2): fires when every player's
+ *    `playStylePreference` is satisfied by the resulting match style.
+ *    Preference semantics:
+ *      0 = Open  → satisfied by any match style
+ *      1 = Mix   → satisfied when the match has mixed gender (style ≥ 1)
+ *      2 = Level → satisfied only when teams are gender-balanced (style = 2)
+ *
+ * 2. Soft gender mismatch penalty (×0.5): fires when gender matching is
+ *    enabled in "Preferred" mode (genderMatchingMode = 0) but the resulting
+ *    doubles arrangement is not gender-balanced. Penalises the match rather
+ *    than eliminating it, so gender-imbalanced matches can still be created
+ *    when no balanced alternative exists.
  */
 function computeSoftMultiplier(
   t1: AlgorithmPlayer[],
-  t2: AlgorithmPlayer[]
+  t2: AlgorithmPlayer[],
+  config?: MatchConfig
 ): number {
+  let multiplier = 1.0;
+
+  // Play-style preference bonus
   const matchStyle = computeMatchStyle(t1, t2);
   const all = [...t1, ...t2];
-
   const allSatisfied = all.every((p) => {
     const pref = p.playStylePreference ?? 0;
     if (pref === 0) return true;
@@ -158,8 +172,19 @@ function computeSoftMultiplier(
     if (pref === 2) return matchStyle === 2;
     return true;
   });
+  if (allSatisfied) multiplier *= 1.2;
 
-  return allSatisfied ? 1.2 : 1.0;
+  // Soft gender mismatch penalty (preferred mode only)
+  if (
+    config?.applyGenderMatching &&
+    config.genderMatchingMode === 0 &&
+    t1.length === 2 &&
+    !isGenderBalancedDoubles(t1, t2)
+  ) {
+    multiplier *= 0.5;
+  }
+
+  return multiplier;
 }
 
 // ─── Scorers ──────────────────────────────────────────────────────────────────
@@ -317,7 +342,7 @@ export function scoreGroup(
     (history * weights.matchHistory) / 100 +
     (time * weights.timeOffCourt) / 100;
 
-  const softMult = config ? computeSoftMultiplier(t1, t2) : 1.0;
+  const softMult = config ? computeSoftMultiplier(t1, t2, config) : 1.0;
 
   return { score: baseScore * softMult, orderedIds };
 }

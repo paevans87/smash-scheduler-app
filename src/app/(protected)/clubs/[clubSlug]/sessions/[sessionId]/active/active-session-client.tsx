@@ -134,6 +134,7 @@ type MatchmakingProfile = {
   weight_time_off_court: number;
   weight_match_history: number;
   apply_gender_matching: boolean;
+  gender_matching_mode: number; // 0=preferred (soft), 1=strict (hard)
   blacklist_mode: number;
 };
 
@@ -1324,6 +1325,7 @@ export function ActiveSessionClient({
           };
           const config: MatchConfig = {
             applyGenderMatching: profile.apply_gender_matching,
+            genderMatchingMode: profile.gender_matching_mode,
             blacklistMode: profile.blacklist_mode,
           };
           const proposals = generateMatches(

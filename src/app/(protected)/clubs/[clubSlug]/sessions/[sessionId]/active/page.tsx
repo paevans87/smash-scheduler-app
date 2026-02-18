@@ -53,14 +53,14 @@ export default async function ActiveSessionPage({
     supabase
       .from("match_making_profiles")
       .select(
-        "id, name, weight_skill_balance, weight_time_off_court, weight_match_history, apply_gender_matching, blacklist_mode"
+        "id, name, weight_skill_balance, weight_time_off_court, weight_match_history, apply_gender_matching, gender_matching_mode, blacklist_mode"
       )
       .is("club_id", null)
       .order("created_at", { ascending: true }),
     supabase
       .from("match_making_profiles")
       .select(
-        "id, name, weight_skill_balance, weight_time_off_court, weight_match_history, apply_gender_matching, blacklist_mode"
+        "id, name, weight_skill_balance, weight_time_off_court, weight_match_history, apply_gender_matching, gender_matching_mode, blacklist_mode"
       )
       .eq("club_id", club.id)
       .order("created_at", { ascending: false }),
@@ -83,6 +83,7 @@ export default async function ActiveSessionPage({
     weight_time_off_court: number;
     weight_match_history: number;
     apply_gender_matching: boolean;
+    gender_matching_mode: number;
     blacklist_mode: number;
   };
   type SkillTier = { id: string; name: string; score: number };

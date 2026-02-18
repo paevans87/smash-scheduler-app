@@ -137,7 +137,7 @@ export default async function ClubManagementPage({
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 px-4 py-6 md:px-6 overflow-x-hidden">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Club Management</h1>
@@ -180,35 +180,37 @@ export default async function ClubManagementPage({
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <div>
-            <CardTitle>Match Making Profiles</CardTitle>
-            <CardDescription>
-              {canCreateCustomProfiles
-                ? "Create profiles with different weightings for match making"
-                : "View default profiles or upgrade to Pro for custom profiles"}
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-3">
-            {!canCreateCustomProfiles && (
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Crown className="size-4 text-amber-500" />
-                <span className="text-sm">Pro feature</span>
-              </div>
-            )}
-            <Button asChild={canCreateCustomProfiles} disabled={!canCreateCustomProfiles}>
-              {canCreateCustomProfiles ? (
-                <Link href={`/clubs/${clubSlug}/manage/profiles/new`}>
-                  <Plus className="mr-2 size-4" />
-                  New Profile
-                </Link>
-              ) : (
-                <>
-                  <Plus className="mr-2 size-4" />
-                  New Profile
-                </>
+        <CardHeader>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <CardTitle>Match Making Profiles</CardTitle>
+              <CardDescription>
+                {canCreateCustomProfiles
+                  ? "Create profiles with different weightings for match making"
+                  : "View default profiles or upgrade to Pro for custom profiles"}
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              {!canCreateCustomProfiles && (
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Crown className="size-4 text-amber-500" />
+                  <span className="text-sm">Pro feature</span>
+                </div>
               )}
-            </Button>
+              <Button asChild={canCreateCustomProfiles} disabled={!canCreateCustomProfiles}>
+                {canCreateCustomProfiles ? (
+                  <Link href={`/clubs/${clubSlug}/manage/profiles/new`}>
+                    <Plus className="mr-2 size-4" />
+                    New Profile
+                  </Link>
+                ) : (
+                  <>
+                    <Plus className="mr-2 size-4" />
+                    New Profile
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         {!canCreateCustomProfiles && (

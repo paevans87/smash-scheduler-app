@@ -99,7 +99,7 @@ export function DeleteClubSection({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-start justify-between gap-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
+        <div className="space-y-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
           <div className="space-y-1">
             <p className="font-medium text-red-800 dark:text-red-200">
               Delete this club
@@ -118,7 +118,6 @@ export function DeleteClubSection({
           {hasActiveSubscription ? (
             <Button
               variant="outline"
-              className="shrink-0"
               onClick={handleManageBilling}
               disabled={portalLoading}
             >
@@ -129,7 +128,7 @@ export function DeleteClubSection({
           ) : (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="shrink-0">
+                <Button variant="destructive">
                   <Trash2 className="mr-2 size-4" />
                   Delete Club
                 </Button>

@@ -22,7 +22,7 @@ export default async function ActiveSessionPage({
 
   const { data: club } = await supabase
     .from("clubs")
-    .select("id, game_type")
+    .select("id, game_type, skill_type, default_matchmaking_profile_id")
     .eq("slug", clubSlug)
     .single();
   if (!club) redirect("/clubs");
@@ -44,6 +44,57 @@ export default async function ActiveSessionPage({
     .single();
   if (!session) redirect(`/clubs/${clubSlug}/sessions`);
 
+  const [
+    { data: systemProfiles },
+    { data: clubProfiles },
+    { data: systemTiers },
+    { data: clubTiers },
+  ] = await Promise.all([
+    supabase
+      .from("match_making_profiles")
+      .select(
+        "id, name, weight_skill_balance, weight_time_off_court, weight_match_history"
+      )
+      .is("club_id", null)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("match_making_profiles")
+      .select(
+        "id, name, weight_skill_balance, weight_time_off_court, weight_match_history"
+      )
+      .eq("club_id", club.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("club_skill_tiers")
+      .select("id, name, score")
+      .is("club_id", null)
+      .order("score", { ascending: true }),
+    supabase
+      .from("club_skill_tiers")
+      .select("id, name, score")
+      .eq("club_id", club.id)
+      .order("score", { ascending: true }),
+  ]);
+
+  type MmProfile = {
+    id: string;
+    name: string;
+    weight_skill_balance: number;
+    weight_time_off_court: number;
+    weight_match_history: number;
+  };
+  type SkillTier = { id: string; name: string; score: number };
+
+  const matchmakingProfiles = [
+    ...((systemProfiles as MmProfile[]) ?? []),
+    ...((clubProfiles as MmProfile[]) ?? []),
+  ];
+
+  const skillTiers = [
+    ...((systemTiers as SkillTier[]) ?? []),
+    ...((clubTiers as SkillTier[]) ?? []),
+  ];
+
   const { data: sessionPlayersRaw } = await supabase
     .from("session_players")
     .select("player_id, is_active")
@@ -51,12 +102,17 @@ export default async function ActiveSessionPage({
 
   const playerIds = sessionPlayersRaw?.map((sp) => sp.player_id) ?? [];
 
-  let playerDetails: Array<{ id: string; name: string | null; gender: number }> =
-    [];
+  let playerDetails: Array<{
+    id: string;
+    name: string | null;
+    gender: number;
+    numerical_skill_level: number | null;
+    skill_tier_id: string | null;
+  }> = [];
   if (playerIds.length > 0) {
     const { data } = await supabase
       .from("players")
-      .select("id, name, gender")
+      .select("id, name, gender, numerical_skill_level, skill_tier_id")
       .in("id", playerIds);
     playerDetails = data ?? [];
   }
@@ -113,10 +169,14 @@ export default async function ActiveSessionPage({
       sessionId={sessionId}
       clubSlug={clubSlug}
       gameType={club.game_type}
+      skillType={club.skill_type}
+      skillTiers={skillTiers}
       session={session}
       sessionPlayers={sessionPlayers}
       courtLabels={courtLabels ?? []}
       matches={matches}
+      matchmakingProfiles={matchmakingProfiles}
+      defaultProfileId={club.default_matchmaking_profile_id ?? null}
     />
   );
 }

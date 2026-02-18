@@ -75,7 +75,7 @@ export default async function ClubLayout({
         userEmail={user.email!}
         showSwitchClub={(userClubCount ?? 0) > 1}
       />
-      <div className="flex flex-1 flex-col md:min-h-screen">
+      <div className="flex flex-1 min-w-0 flex-col md:min-h-screen">
         <div className="border-b px-4 py-3 md:px-6">
           <ClubBreadcrumbs clubSlug={clubSlug} clubName={club.name} />
         </div>

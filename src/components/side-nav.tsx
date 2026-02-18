@@ -12,9 +12,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeftRight,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProfileMenu } from "@/components/profile-menu";
+import { FeedbackDialog } from "@/components/feedback-dialog";
 import {
   Tooltip,
   TooltipTrigger,
@@ -39,6 +41,7 @@ export function SideNav({
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     setCollapsed(localStorage.getItem(STORAGE_KEY) === "true");
@@ -146,6 +149,30 @@ export function SideNav({
           return linkContent;
         })}
 
+        <div className="mt-2 border-t pt-2">
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setFeedbackOpen(true)}
+                  className="flex w-full items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <MessageSquare className="size-5 shrink-0" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Feedback</TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={() => setFeedbackOpen(true)}
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <MessageSquare className="size-5 shrink-0" />
+              <span>Feedback</span>
+            </button>
+          )}
+        </div>
+
         {showSwitchClub && (
           <>
             <div className="my-2 border-t" />
@@ -189,6 +216,10 @@ export function SideNav({
           )}
         </button>
       </div>
+      <FeedbackDialog
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+      />
     </aside>
   );
 }

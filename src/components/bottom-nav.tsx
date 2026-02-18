@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProfileMenu } from "@/components/profile-menu";
+import { FeedbackDialog } from "@/components/feedback-dialog";
 
 type BottomNavProps = {
   clubSlug: string;
@@ -13,6 +15,7 @@ type BottomNavProps = {
 
 export function BottomNav({ clubSlug, userEmail }: BottomNavProps) {
   const pathname = usePathname();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const navItems = [
     {
@@ -58,10 +61,21 @@ export function BottomNav({ clubSlug, userEmail }: BottomNavProps) {
           <span>{item.label}</span>
         </Link>
       ))}
+      <button
+        onClick={() => setFeedbackOpen(true)}
+        className="flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium text-muted-foreground transition-colors"
+      >
+        <MessageSquare className="size-5" />
+        <span>Feedback</span>
+      </button>
       <div className="flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium text-muted-foreground">
         <ProfileMenu userEmail={userEmail} />
         <span>Profile</span>
       </div>
+      <FeedbackDialog
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+      />
     </nav>
   );
 }

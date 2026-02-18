@@ -1,4 +1,7 @@
-// ─── Public types ─────────────────────────────────────────────────────────────
+export const BASE_MULTIPLIER = 1.0;
+export const LEVEL_MULTIPLIER = 1.12;
+export const MIX_MULTIPLIER = 1.04;
+export const ASYMETRIC_GENDER_MULTIPLIER = 0.9;
 
 export type AlgorithmPlayer = {
   id: string;
@@ -149,11 +152,11 @@ function computeMatchStyle(
  *      0 = Open  → satisfied by any match style
  *      1 = Mix   → satisfied when both teams are gender-balanced (style = 1)
  *      2 = Level → satisfied when both teams are all same-gender (style = 2)
- *    Level games receive a larger nudge (×1.12) than Mix (×1.04) because
+ *    Level games receive a larger nudge (×{LEVEL_MULTIPLIER}) than Mix (×{MIX_MULTIPLIER}) because
  *    Level is the natural default preference — most players are Open but
  *    Level games are generally preferred when there's no strong preference.
  *
- * 2. Soft asymmetric-arrangement nudge (×0.9): fires when gender matching is
+ * 2. Soft asymmetric-arrangement nudge (×{ASYMETRIC_GENDER_MULTIPLIER}): fires when gender matching is
  *    enabled in "Preferred" mode and the arrangement is gender-asymmetric
  *    (one team mixed, the other same-gender). Does not penalise valid Level
  *    or Mix games.
@@ -163,7 +166,7 @@ function computeSoftMultiplier(
   t2: AlgorithmPlayer[],
   config?: MatchConfig
 ): number {
-  let multiplier = 1.0;
+  let multiplier = BASE_MULTIPLIER;
 
   // Play-style preference nudge
   const matchStyle = computeMatchStyle(t1, t2);
@@ -177,7 +180,7 @@ function computeSoftMultiplier(
   });
   if (allSatisfied) {
     // Level games are the preferred default; give them a slightly larger nudge
-    multiplier *= matchStyle === 2 ? 1.12 : 1.04;
+    multiplier *= matchStyle === 2 ? LEVEL_MULTIPLIER : MIX_MULTIPLIER;
   }
 
   // Soft asymmetric-arrangement nudge (preferred mode only)
@@ -186,7 +189,7 @@ function computeSoftMultiplier(
     config.genderMatchingMode === 0 &&
     !isGenderSymmetric(t1, t2)
   ) {
-    multiplier *= 0.9;
+    multiplier *= ASYMETRIC_GENDER_MULTIPLIER;
   }
 
   return multiplier;

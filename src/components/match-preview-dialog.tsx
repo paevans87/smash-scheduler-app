@@ -61,6 +61,8 @@ type Props = {
   selectedCourts: number[];
   courtLabels: CourtLabel[];
   config?: MatchConfig;
+  mode?: "generate" | "draft"; // controls title and confirm button label
+  onManualFallback?: () => void; // shown in the empty state so the user can skip to manual
   onConfirm: (matches: ConfirmedMatch[]) => void;
 };
 
@@ -95,6 +97,8 @@ export function MatchPreviewDialog({
   selectedCourts,
   courtLabels,
   config,
+  mode = "generate",
+  onManualFallback,
   onConfirm,
 }: Props) {
   const [proposals, setProposals] = useState<ProposalState[]>([]);
@@ -333,14 +337,23 @@ export function MatchPreviewDialog({
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
       <DialogContent className="max-w-2xl w-full">
         <DialogHeader>
-          <DialogTitle>Generated Matches</DialogTitle>
+          <DialogTitle>
+            {mode === "draft" ? "Draft Proposals" : "Generated Matches"}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="overflow-y-auto max-h-[60vh] space-y-3 py-1 pr-1">
           {proposals.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-10">
-              No matches could be generated with the current bench players.
-            </p>
+            <div className="flex flex-col items-center gap-4 py-10 text-center">
+              <p className="text-sm text-muted-foreground">
+                No matches could be generated with the current bench players.
+              </p>
+              {onManualFallback && (
+                <Button variant="outline" size="sm" onClick={onManualFallback}>
+                  {mode === "draft" ? "Add Manual Draft" : "Add Manual Match"}
+                </Button>
+              )}
+            </div>
           ) : (
             proposals.map((proposal) => (
               <div
@@ -468,7 +481,9 @@ export function MatchPreviewDialog({
             Cancel
           </Button>
           <Button onClick={handleConfirm} disabled={!allComplete}>
-            Start {completeCount} {completeCount === 1 ? "Match" : "Matches"}
+            {mode === "draft"
+              ? `Add ${completeCount} to Draft`
+              : `Start ${completeCount} ${completeCount === 1 ? "Match" : "Matches"}`}
           </Button>
         </DialogFooter>
       </DialogContent>

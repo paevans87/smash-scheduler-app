@@ -48,6 +48,7 @@ import {
   type CompletedMatchRecord,
   type MatchCandidate,
   type ScoringWeights,
+  type MatchConfig,
   generateMatches,
 } from "@/lib/matchmaking";
 import {
@@ -77,6 +78,7 @@ type Player = {
   gender: number;
   numerical_skill_level: number | null;
   skill_tier_id: string | null;
+  play_style_preference: number;
 };
 
 type SessionPlayer = {
@@ -131,6 +133,8 @@ type MatchmakingProfile = {
   weight_skill_balance: number;
   weight_time_off_court: number;
   weight_match_history: number;
+  apply_gender_matching: boolean;
+  blacklist_mode: number;
 };
 
 type SkillTier = {
@@ -151,6 +155,11 @@ type Props = {
   matches: Match[];
   matchmakingProfiles: MatchmakingProfile[];
   defaultProfileId: string | null;
+  playerBlacklists: Array<{
+    player_id: string;
+    blacklisted_player_id: string;
+    blacklist_type: number; // 0=opponent, 1=partner
+  }>;
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -167,6 +176,7 @@ export function ActiveSessionClient({
   matches: initialMatches,
   matchmakingProfiles,
   defaultProfileId,
+  playerBlacklists,
 }: Props) {
   const router = useRouter();
   const supabase = createClient();
@@ -196,6 +206,7 @@ export function ActiveSessionClient({
     proposals: MatchCandidate[];
     weights: ScoringWeights;
     courts: number[];
+    config: MatchConfig;
   } | null>(null);
 
   // ─── Seed IDB on mount ────────────────────────────────────────────────────
@@ -351,6 +362,22 @@ export function ActiveSessionClient({
     return m;
   }, [skillTiers]);
 
+  const blacklistMap = useMemo(() => {
+    const m = new Map<string, { opponentIds: string[]; partnerIds: string[] }>();
+    for (const bl of playerBlacklists) {
+      if (!m.has(bl.player_id)) {
+        m.set(bl.player_id, { opponentIds: [], partnerIds: [] });
+      }
+      const entry = m.get(bl.player_id)!;
+      if (bl.blacklist_type === 0) {
+        entry.opponentIds.push(bl.blacklisted_player_id);
+      } else {
+        entry.partnerIds.push(bl.blacklisted_player_id);
+      }
+    }
+    return m;
+  }, [playerBlacklists]);
+
   const algorithmBenchPlayers = useMemo<AlgorithmPlayer[]>(() => {
     return benchPlayers
       .filter((sp) => sp.player)
@@ -365,14 +392,18 @@ export function ActiveSessionClient({
               : 50;
           skillLevel = Math.max(1, Math.min(10, Math.round(score / 10)));
         }
+        const bl = blacklistMap.get(sp.player_id);
         return {
           id: sp.player_id,
           name: sp.player!.name ?? "Unknown",
           gender: sp.player!.gender,
           skillLevel,
+          playStylePreference: sp.player!.play_style_preference,
+          opponentBlacklist: bl?.opponentIds ?? [],
+          partnerBlacklist: bl?.partnerIds ?? [],
         };
       });
-  }, [benchPlayers, skillType, tierScoreMap]);
+  }, [benchPlayers, skillType, tierScoreMap, blacklistMap]);
 
   const algorithmCompletedMatches = useMemo<CompletedMatchRecord[]>(() => {
     return localMatches
@@ -1291,14 +1322,19 @@ export function ActiveSessionClient({
             matchHistory: profile.weight_match_history,
             timeOffCourt: profile.weight_time_off_court,
           };
+          const config: MatchConfig = {
+            applyGenderMatching: profile.apply_gender_matching,
+            blacklistMode: profile.blacklist_mode,
+          };
           const proposals = generateMatches(
             algorithmBenchPlayers,
             algorithmCompletedMatches,
             selectedCourts,
             weights,
-            playersPerMatch
+            playersPerMatch,
+            config
           );
-          setPreviewData({ proposals, weights, courts: selectedCourts });
+          setPreviewData({ proposals, weights, courts: selectedCourts, config });
           setMatchPreviewOpen(true);
         }}
       />
@@ -1341,6 +1377,7 @@ export function ActiveSessionClient({
           playersPerMatch={playersPerMatch}
           selectedCourts={previewData.courts}
           courtLabels={courtLabels}
+          config={previewData.config}
           onConfirm={handleConfirmProposals}
         />
       )}

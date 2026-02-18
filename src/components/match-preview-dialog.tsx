@@ -16,10 +16,11 @@ import {
   type CompletedMatchRecord,
   type MatchCandidate,
   type ScoringWeights,
+  type MatchConfig,
   generateMatches,
   findBestReplacement,
   scoreGroup,
-  buildPairCounts,
+  buildGroupCounts,
   buildLastMatchTimes,
 } from "@/lib/matchmaking";
 
@@ -59,6 +60,7 @@ type Props = {
   playersPerMatch: number;
   selectedCourts: number[];
   courtLabels: CourtLabel[];
+  config?: MatchConfig;
   onConfirm: (matches: ConfirmedMatch[]) => void;
 };
 
@@ -92,6 +94,7 @@ export function MatchPreviewDialog({
   playersPerMatch,
   selectedCourts,
   courtLabels,
+  config,
   onConfirm,
 }: Props) {
   const [proposals, setProposals] = useState<ProposalState[]>([]);
@@ -123,8 +126,8 @@ export function MatchPreviewDialog({
   }, [allBenchPlayers]);
 
   // Pre-compute history data (stable for the lifetime of this dialog open)
-  const pairCounts = useMemo(
-    () => buildPairCounts(completedMatches),
+  const groupCounts = useMemo(
+    () => buildGroupCounts(completedMatches),
     [completedMatches]
   );
   const lastMatchTimes = useMemo(
@@ -158,12 +161,20 @@ export function MatchPreviewDialog({
       .map((id) => playerMap.get(id))
       .filter(Boolean) as AlgorithmPlayer[];
     if (group.length < playersPerMatch) return 0;
+    const now = Date.now();
+    const maxWaitMs = allBenchPlayers.reduce((max, p) => {
+      const last = lastMatchTimes.get(p.id);
+      const waitMs = last != null ? now - last : 3_600_000;
+      return Math.max(max, waitMs);
+    }, 0);
     const { score } = scoreGroup(
       group,
-      pairCounts,
+      groupCounts,
       lastMatchTimes,
       weights,
-      Date.now()
+      now,
+      maxWaitMs,
+      config
     );
     return score;
   }
@@ -202,7 +213,8 @@ export function MatchPreviewDialog({
       pool,
       completedMatches,
       weights,
-      playersPerMatch
+      playersPerMatch,
+      config
     );
     if (!bestId) return;
 
@@ -250,7 +262,8 @@ export function MatchPreviewDialog({
       completedMatches,
       [courtNumber],
       weights,
-      playersPerMatch
+      playersPerMatch,
+      config
     );
     if (!results.length) return;
     const r = results[0];
@@ -275,7 +288,8 @@ export function MatchPreviewDialog({
       completedMatches,
       selectedCourts,
       weights,
-      playersPerMatch
+      playersPerMatch,
+      config
     );
     setProposals(
       results.map((r) => ({

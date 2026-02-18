@@ -53,14 +53,14 @@ export default async function ActiveSessionPage({
     supabase
       .from("match_making_profiles")
       .select(
-        "id, name, weight_skill_balance, weight_time_off_court, weight_match_history"
+        "id, name, weight_skill_balance, weight_time_off_court, weight_match_history, apply_gender_matching, blacklist_mode"
       )
       .is("club_id", null)
       .order("created_at", { ascending: true }),
     supabase
       .from("match_making_profiles")
       .select(
-        "id, name, weight_skill_balance, weight_time_off_court, weight_match_history"
+        "id, name, weight_skill_balance, weight_time_off_court, weight_match_history, apply_gender_matching, blacklist_mode"
       )
       .eq("club_id", club.id)
       .order("created_at", { ascending: false }),
@@ -82,6 +82,8 @@ export default async function ActiveSessionPage({
     weight_skill_balance: number;
     weight_time_off_court: number;
     weight_match_history: number;
+    apply_gender_matching: boolean;
+    blacklist_mode: number;
   };
   type SkillTier = { id: string; name: string; score: number };
 
@@ -108,13 +110,27 @@ export default async function ActiveSessionPage({
     gender: number;
     numerical_skill_level: number | null;
     skill_tier_id: string | null;
+    play_style_preference: number;
   }> = [];
   if (playerIds.length > 0) {
     const { data } = await supabase
       .from("players")
-      .select("id, name, gender, numerical_skill_level, skill_tier_id")
+      .select("id, name, gender, numerical_skill_level, skill_tier_id, play_style_preference")
       .in("id", playerIds);
     playerDetails = data ?? [];
+  }
+
+  let playerBlacklists: Array<{
+    player_id: string;
+    blacklisted_player_id: string;
+    blacklist_type: number;
+  }> = [];
+  if (playerIds.length > 0) {
+    const { data } = await supabase
+      .from("player_blacklists")
+      .select("player_id, blacklisted_player_id, blacklist_type")
+      .in("player_id", playerIds);
+    playerBlacklists = data ?? [];
   }
 
   const sessionPlayers = (sessionPlayersRaw ?? []).map((sp) => ({
@@ -177,6 +193,7 @@ export default async function ActiveSessionPage({
       matches={matches}
       matchmakingProfiles={matchmakingProfiles}
       defaultProfileId={club.default_matchmaking_profile_id ?? null}
+      playerBlacklists={playerBlacklists}
     />
   );
 }

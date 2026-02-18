@@ -185,6 +185,7 @@ export default async function ActiveSessionPage({
     <ActiveSessionClient
       sessionId={sessionId}
       clubSlug={clubSlug}
+      clubId={club.id}
       gameType={club.game_type}
       skillType={club.skill_type}
       skillTiers={skillTiers}

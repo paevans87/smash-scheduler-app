@@ -77,8 +77,15 @@ function getCourtName(num: number, labels: CourtLabel[]): string {
   return labels.find((l) => l.court_number === num)?.label ?? `Court ${num}`;
 }
 
+function scoreLabel(score: number): string {
+  if (score >= 85) return "Excellent";
+  if (score >= 70) return "Good";
+  if (score >= 50) return "Fair";
+  return "Poor";
+}
+
 function scoreBadgeClass(score: number): string {
-  if (score >= 75) return "bg-green-600 hover:bg-green-600 text-white";
+  if (score >= 70) return "bg-green-600 hover:bg-green-600 text-white";
   if (score >= 50) return "bg-yellow-500 hover:bg-yellow-500 text-white";
   return "bg-red-500 hover:bg-red-500 text-white";
 }
@@ -369,7 +376,7 @@ export function MatchPreviewDialog({
                     <Badge
                       className={`text-xs ${scoreBadgeClass(proposal.score)}`}
                     >
-                      {Math.round(proposal.score)}
+                      {scoreLabel(proposal.score)}
                     </Badge>
                   </div>
                   <Button

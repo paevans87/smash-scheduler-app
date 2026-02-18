@@ -33,8 +33,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Crown, Trash2 } from "lucide-react";
+import { Crown, Trash2, TriangleAlert } from "lucide-react";
 import Link from "next/link";
+
+const DEFAULT_LEVEL_MULTIPLIER = 1.12;
+const DEFAULT_MIX_MULTIPLIER = 1.04;
+const DEFAULT_ASYMMETRIC_GENDER_MULTIPLIER = 0.9;
 
 type Profile = {
   id: string;
@@ -46,6 +50,9 @@ type Profile = {
   apply_gender_matching: boolean;
   gender_matching_mode: number;
   blacklist_mode: number;
+  level_multiplier: number;
+  mix_multiplier: number;
+  asymmetric_gender_multiplier: number;
 };
 
 type EditProfileFormProps = {
@@ -68,6 +75,16 @@ export function EditProfileForm({ profile, clubId, clubSlug, canCreateCustomProf
   const [applyGenderMatching, setApplyGenderMatching] = useState(profile.apply_gender_matching);
   const [genderMatchingMode, setGenderMatchingMode] = useState(profile.gender_matching_mode.toString());
   const [blacklistMode, setBlacklistMode] = useState(profile.blacklist_mode.toString());
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [levelMultiplier, setLevelMultiplier] = useState(profile.level_multiplier ?? DEFAULT_LEVEL_MULTIPLIER);
+  const [mixMultiplier, setMixMultiplier] = useState(profile.mix_multiplier ?? DEFAULT_MIX_MULTIPLIER);
+  const [asymmetricGenderMultiplier, setAsymmetricGenderMultiplier] = useState(profile.asymmetric_gender_multiplier ?? DEFAULT_ASYMMETRIC_GENDER_MULTIPLIER);
+
+  function resetMultipliers() {
+    setLevelMultiplier(DEFAULT_LEVEL_MULTIPLIER);
+    setMixMultiplier(DEFAULT_MIX_MULTIPLIER);
+    setAsymmetricGenderMultiplier(DEFAULT_ASYMMETRIC_GENDER_MULTIPLIER);
+  }
 
   const totalWeight = skillWeight + timeOffWeight + historyWeight;
   const isValid = totalWeight === 100 && name.trim() !== "";
@@ -89,6 +106,9 @@ export function EditProfileForm({ profile, clubId, clubSlug, canCreateCustomProf
           apply_gender_matching: applyGenderMatching,
           gender_matching_mode: parseInt(genderMatchingMode),
           blacklist_mode: parseInt(blacklistMode),
+          level_multiplier: levelMultiplier,
+          mix_multiplier: mixMultiplier,
+          asymmetric_gender_multiplier: asymmetricGenderMultiplier,
         })
         .eq("id", profile.id);
 
@@ -306,6 +326,99 @@ export function EditProfileForm({ profile, clubId, clubSlug, canCreateCustomProf
             </p>
           </div>
         </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle>Advanced Settings</CardTitle>
+              <CardDescription>Fine-tune the soft multiplier variables used by the algorithm</CardDescription>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <Checkbox
+                id="showAdvanced"
+                checked={showAdvanced}
+                onCheckedChange={(checked) => setShowAdvanced(checked === true)}
+                disabled={isSystemDefault}
+              />
+              <Label htmlFor="showAdvanced" className="font-normal text-sm">
+                Enable
+              </Label>
+            </div>
+          </div>
+        </CardHeader>
+        {showAdvanced && (
+          <CardContent className="space-y-6">
+            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950">
+              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-500" />
+              <p className="text-amber-800 dark:text-amber-200">
+                Changing these values can easily cause the algorithm to produce unexpected results. Modify with caution.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="levelMultiplier">Level Multiplier</Label>
+              <Input
+                id="levelMultiplier"
+                type="number"
+                value={levelMultiplier}
+                onChange={(e) => setLevelMultiplier(parseFloat(e.target.value))}
+                min={0.5}
+                max={3.0}
+                step={0.01}
+                disabled={isSystemDefault}
+              />
+              <p className="text-xs text-muted-foreground">
+                Score boost when all players' preferences are satisfied in a same-gender (Level) game. Default: 1.12
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="mixMultiplier">Mix Multiplier</Label>
+              <Input
+                id="mixMultiplier"
+                type="number"
+                value={mixMultiplier}
+                onChange={(e) => setMixMultiplier(parseFloat(e.target.value))}
+                min={0.5}
+                max={3.0}
+                step={0.01}
+                disabled={isSystemDefault}
+              />
+              <p className="text-xs text-muted-foreground">
+                Score boost when all players' preferences are satisfied in a gender-balanced (Mix) game. Default: 1.04
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="asymmetricGenderMultiplier">Asymmetric Gender Multiplier</Label>
+              <Input
+                id="asymmetricGenderMultiplier"
+                type="number"
+                value={asymmetricGenderMultiplier}
+                onChange={(e) => setAsymmetricGenderMultiplier(parseFloat(e.target.value))}
+                min={0.1}
+                max={1.0}
+                step={0.01}
+                disabled={isSystemDefault}
+              />
+              <p className="text-xs text-muted-foreground">
+                Soft score penalty applied when gender matching is in Preferred mode and teams have asymmetric gender compositions. Default: 0.9
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={resetMultipliers}
+              disabled={isSystemDefault}
+            >
+              Reset to defaults
+            </Button>
+          </CardContent>
+        )}
       </Card>
 
       <div className="flex justify-between">

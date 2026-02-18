@@ -139,6 +139,9 @@ type MatchmakingProfile = {
   apply_gender_matching: boolean;
   gender_matching_mode: number; // 0=preferred (soft), 1=strict (hard)
   blacklist_mode: number;
+  level_multiplier: number;
+  mix_multiplier: number;
+  asymmetric_gender_multiplier: number;
 };
 
 type SkillTier = {
@@ -1460,6 +1463,9 @@ export function ActiveSessionClient({
             applyGenderMatching: profile.apply_gender_matching,
             genderMatchingMode: profile.gender_matching_mode,
             blacklistMode: profile.blacklist_mode,
+            levelMultiplier: profile.level_multiplier,
+            mixMultiplier: profile.mix_multiplier,
+            asymmetricGenderMultiplier: profile.asymmetric_gender_multiplier,
           };
           const proposals = generateMatches(
             algorithmBenchPlayers,
@@ -1493,6 +1499,9 @@ export function ActiveSessionClient({
             applyGenderMatching: profile.apply_gender_matching,
             genderMatchingMode: profile.gender_matching_mode,
             blacklistMode: profile.blacklist_mode,
+            levelMultiplier: profile.level_multiplier,
+            mixMultiplier: profile.mix_multiplier,
+            asymmetricGenderMultiplier: profile.asymmetric_gender_multiplier,
           };
           // Virtual court numbers 1..count — used only as internal IDs in the preview
           const virtualCourts = Array.from({ length: count }, (_, i) => i + 1);

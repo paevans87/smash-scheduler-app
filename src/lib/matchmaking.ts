@@ -66,15 +66,18 @@ export function buildLastMatchTimes(
 
 // ─── Hard constraint checkers ─────────────────────────────────────────────────
 
-function isGenderBalancedDoubles(
+/**
+ * Returns true when both teams have the same gender composition.
+ * Allows [2M vs 2M], [2F vs 2F], and [1M+1F vs 1M+1F] (the two intended
+ * match types), while rejecting asymmetric arrangements like [2M vs 1M+1F].
+ */
+function isGenderSymmetric(
   t1: AlgorithmPlayer[],
   t2: AlgorithmPlayer[]
 ): boolean {
   const t1Males = t1.filter((p) => p.gender === 0).length;
-  const t1Females = t1.filter((p) => p.gender === 1).length;
   const t2Males = t2.filter((p) => p.gender === 0).length;
-  const t2Females = t2.filter((p) => p.gender === 1).length;
-  return t1Males === 1 && t1Females === 1 && t2Males === 1 && t2Females === 1;
+  return t1Males === t2Males;
 }
 
 function hasBlacklistViolation(
@@ -105,9 +108,11 @@ function isValidArrangement(
   t2: AlgorithmPlayer[],
   config: MatchConfig
 ): boolean {
-  // Gender strict mode: filter out gender-imbalanced arrangements entirely
-  if (config.applyGenderMatching && config.genderMatchingMode === 1 && t1.length === 2) {
-    if (!isGenderBalancedDoubles(t1, t2)) return false;
+  // Gender strict mode: only allow gender-symmetric arrangements —
+  // same-gender-per-team (2M vs 2M or 2F vs 2F) OR gender-balanced-per-team
+  // (1M+1F vs 1M+1F). Asymmetric arrangements (2M vs 1M+1F) are rejected.
+  if (config.applyGenderMatching && config.genderMatchingMode === 1) {
+    if (!isGenderSymmetric(t1, t2)) return false;
   }
   if (config.blacklistMode === 1 && hasBlacklistViolation(t1, t2)) return false;
   return true;
@@ -116,44 +121,42 @@ function isValidArrangement(
 // ─── Soft multipliers ─────────────────────────────────────────────────────────
 
 /**
- * Returns the style of the resulting match:
- *   2 = Level  (each team has exactly 1M + 1F in doubles)
- *   1 = Mix    (group has both genders but not perfectly balanced per team)
- *   0 = Open   (all same gender)
+ * Returns the style of the resulting match arrangement:
+ *   2 = Level — all same gender per team (2M vs 2M, or 2F vs 2F)
+ *   1 = Mix   — gender-balanced per team (1M+1F vs 1M+1F)
+ *   0 = Asymmetric — teams have different gender compositions (undesirable)
  */
 function computeMatchStyle(
   t1: AlgorithmPlayer[],
   t2: AlgorithmPlayer[]
 ): number {
-  if (t1.length === 2) {
-    const t1Males = t1.filter((p) => p.gender === 0).length;
-    const t2Males = t2.filter((p) => p.gender === 0).length;
-    if (t1Males === 1 && t2Males === 1) return 2; // Level
-  }
-  const all = [...t1, ...t2];
-  if (all.some((p) => p.gender === 0) && all.some((p) => p.gender === 1)) {
-    return 1; // Mix
-  }
-  return 0; // Open
+  const t1Males = t1.filter((p) => p.gender === 0).length;
+  const t2Males = t2.filter((p) => p.gender === 0).length;
+  // Symmetric arrangements only — teams must have the same gender composition
+  if (t1Males !== t2Males) return 0; // Asymmetric
+  // Both teams all-same-gender → Level
+  if (t1Males === 0 || t1Males === t1.length) return 2;
+  // Both teams mixed → Mix
+  return 1;
 }
 
 /**
  * Computes a combined soft multiplier for a proposed match arrangement.
  *
- * Two effects:
- *
- * 1. Play-style preference bonus (×1.2): fires when every player's
+ * 1. Play-style preference nudge: fires when every player's
  *    `playStylePreference` is satisfied by the resulting match style.
  *    Preference semantics:
  *      0 = Open  → satisfied by any match style
- *      1 = Mix   → satisfied when the match has mixed gender (style ≥ 1)
- *      2 = Level → satisfied only when teams are gender-balanced (style = 2)
+ *      1 = Mix   → satisfied when both teams are gender-balanced (style = 1)
+ *      2 = Level → satisfied when both teams are all same-gender (style = 2)
+ *    Level games receive a larger nudge (×1.12) than Mix (×1.04) because
+ *    Level is the natural default preference — most players are Open but
+ *    Level games are generally preferred when there's no strong preference.
  *
- * 2. Soft gender mismatch penalty (×0.5): fires when gender matching is
- *    enabled in "Preferred" mode (genderMatchingMode = 0) but the resulting
- *    doubles arrangement is not gender-balanced. Penalises the match rather
- *    than eliminating it, so gender-imbalanced matches can still be created
- *    when no balanced alternative exists.
+ * 2. Soft asymmetric-arrangement nudge (×0.9): fires when gender matching is
+ *    enabled in "Preferred" mode and the arrangement is gender-asymmetric
+ *    (one team mixed, the other same-gender). Does not penalise valid Level
+ *    or Mix games.
  */
 function computeSoftMultiplier(
   t1: AlgorithmPlayer[],
@@ -162,26 +165,28 @@ function computeSoftMultiplier(
 ): number {
   let multiplier = 1.0;
 
-  // Play-style preference bonus
+  // Play-style preference nudge
   const matchStyle = computeMatchStyle(t1, t2);
   const all = [...t1, ...t2];
   const allSatisfied = all.every((p) => {
     const pref = p.playStylePreference ?? 0;
-    if (pref === 0) return true;
-    if (pref === 1) return matchStyle >= 1;
-    if (pref === 2) return matchStyle === 2;
+    if (pref === 0) return true;          // Open: happy with anything
+    if (pref === 1) return matchStyle === 1; // Mix: wants gender-balanced teams
+    if (pref === 2) return matchStyle === 2; // Level: wants same-gender teams
     return true;
   });
-  if (allSatisfied) multiplier *= 1.2;
+  if (allSatisfied) {
+    // Level games are the preferred default; give them a slightly larger nudge
+    multiplier *= matchStyle === 2 ? 1.12 : 1.04;
+  }
 
-  // Soft gender mismatch penalty (preferred mode only)
+  // Soft asymmetric-arrangement nudge (preferred mode only)
   if (
     config?.applyGenderMatching &&
     config.genderMatchingMode === 0 &&
-    t1.length === 2 &&
-    !isGenderBalancedDoubles(t1, t2)
+    !isGenderSymmetric(t1, t2)
   ) {
-    multiplier *= 0.5;
+    multiplier *= 0.9;
   }
 
   return multiplier;

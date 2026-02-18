@@ -26,6 +26,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   BarChart2,
   Armchair,
   Plus,
@@ -257,10 +264,22 @@ export function ActiveSessionClient({
           <Badge className="bg-green-500 hover:bg-green-500 text-white px-3 py-1 text-sm">
             LIVE
           </Badge>
-          <Button variant="ghost" size="sm" disabled>
-            <Plus className="mr-1 h-4 w-4" />
-            Add Match
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Plus className="mr-1 h-4 w-4" />
+                Add Match
+                <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem disabled>Auto Generate</DropdownMenuItem>
+              <DropdownMenuItem disabled>Add Manual</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem disabled>Auto Draft</DropdownMenuItem>
+              <DropdownMenuItem disabled>Manual Draft</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button

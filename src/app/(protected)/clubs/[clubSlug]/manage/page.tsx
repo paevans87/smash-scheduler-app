@@ -27,6 +27,7 @@ type MatchMakingProfile = {
   weight_time_off_court: number;
   weight_match_history: number;
   apply_gender_matching: boolean;
+  gender_matching_mode: number;
   blacklist_mode: number;
 };
 

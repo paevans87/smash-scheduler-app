@@ -44,6 +44,7 @@ type Profile = {
   weight_time_off_court: number;
   weight_match_history: number;
   apply_gender_matching: boolean;
+  gender_matching_mode: number;
   blacklist_mode: number;
 };
 
@@ -65,6 +66,7 @@ export function EditProfileForm({ profile, clubId, clubSlug, canCreateCustomProf
   const [timeOffWeight, setTimeOffWeight] = useState(profile.weight_time_off_court);
   const [historyWeight, setHistoryWeight] = useState(profile.weight_match_history);
   const [applyGenderMatching, setApplyGenderMatching] = useState(profile.apply_gender_matching);
+  const [genderMatchingMode, setGenderMatchingMode] = useState(profile.gender_matching_mode.toString());
   const [blacklistMode, setBlacklistMode] = useState(profile.blacklist_mode.toString());
 
   const totalWeight = skillWeight + timeOffWeight + historyWeight;
@@ -85,6 +87,7 @@ export function EditProfileForm({ profile, clubId, clubSlug, canCreateCustomProf
           weight_time_off_court: timeOffWeight,
           weight_match_history: historyWeight,
           apply_gender_matching: applyGenderMatching,
+          gender_matching_mode: parseInt(genderMatchingMode),
           blacklist_mode: parseInt(blacklistMode),
         })
         .eq("id", profile.id);
@@ -238,8 +241,8 @@ export function EditProfileForm({ profile, clubId, clubSlug, canCreateCustomProf
 
       <Card>
         <CardHeader>
-          <CardTitle>Additional Options</CardTitle>
-          <CardDescription>Configure additional match making rules</CardDescription>
+          <CardTitle>Gender Matching Options</CardTitle>
+          <CardDescription>Configure gender matching rules</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center space-x-2">
@@ -262,6 +265,30 @@ export function EditProfileForm({ profile, clubId, clubSlug, canCreateCustomProf
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="genderMatchingMode">Gender Matching Mode</Label>
+            <Select value={genderMatchingMode} onValueChange={setGenderMatchingMode} disabled={isSystemDefault}>
+              <SelectTrigger id="genderMatchingMode">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Preferred (soft)</SelectItem>
+                <SelectItem value="1">Strict (hard)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Preferred: Avoid gender mismatches when possible. Strict: Never create gender mismatched games.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Blacklist Options</CardTitle>
+          <CardDescription>Configure blacklist handling rules</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="blacklistMode">Blacklist Mode</Label>
             <Select value={blacklistMode} onValueChange={setBlacklistMode} disabled={isSystemDefault}>

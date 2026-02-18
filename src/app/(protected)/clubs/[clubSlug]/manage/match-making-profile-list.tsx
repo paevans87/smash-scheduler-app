@@ -17,6 +17,7 @@ type MatchMakingProfile = {
   weight_time_off_court: number;
   weight_match_history: number;
   apply_gender_matching: boolean;
+  gender_matching_mode: number;
   blacklist_mode: number;
 };
 
@@ -124,6 +125,12 @@ export function MatchMakingProfileList({
                 Gender Match:{" "}
                 <span className="font-medium text-foreground">
                   {profile.apply_gender_matching ? "On" : "Off"}
+                </span>
+              </span>
+              <span>
+                Gender Mode:{" "}
+                <span className="font-medium text-foreground">
+                  {profile.gender_matching_mode === 1 ? "Strict" : "Preferred"}
                 </span>
               </span>
               <span>

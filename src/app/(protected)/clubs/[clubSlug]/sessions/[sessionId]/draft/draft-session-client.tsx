@@ -312,8 +312,8 @@ export function DraftSessionClient({
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-start justify-between">
+    <div className="space-y-6 px-4 py-6 md:px-6 overflow-x-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Session Draft</h1>
           <p className="text-muted-foreground">
@@ -434,19 +434,19 @@ export function DraftSessionClient({
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            <div className="space-y-2 max-h-[400px] overflow-y-auto overflow-x-hidden">
               {filteredAvailablePlayers.map((player) => (
                 <div
                   key={player.id}
                   className="flex items-center justify-between rounded-md border p-2"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span
-                      className="h-4 w-4 rounded-full"
+                      className="h-4 w-4 rounded-full shrink-0"
                       style={{ backgroundColor: genderColours[player.gender ?? 2] }}
                     />
-                    <div>
-                      <p className="font-medium">{player.name ?? `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim()}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{player.name ?? `${player.first_name ?? ''} ${player.last_name ?? ''}`.trim()}</p>
                       <p className="text-xs text-muted-foreground">
                         Skill: {skillType === 0 ? player.numerical_skill_level : player.skill_tier?.name ?? 'Not set'}
                       </p>
@@ -480,7 +480,7 @@ export function DraftSessionClient({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            <div className="space-y-2 max-h-[400px] overflow-y-auto overflow-x-hidden">
               {currentSessionPlayers
                 .filter((sp): sp is typeof sp & { players: Player } => !!sp.players)
                 .map((sessionPlayer) => (
@@ -488,13 +488,13 @@ export function DraftSessionClient({
                     key={sessionPlayer.player_id}
                     className="flex items-center justify-between rounded-md border p-2"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <span
-                        className="h-4 w-4 rounded-full"
+                        className="h-4 w-4 rounded-full shrink-0"
                         style={{ backgroundColor: genderColours[sessionPlayer.players.gender ?? 2] }}
                       />
-                      <div>
-                        <p className="font-medium">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">
                           {sessionPlayer.players.name ?? `${sessionPlayer.players.first_name ?? ''} ${sessionPlayer.players.last_name ?? ''}`.trim()}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -528,7 +528,7 @@ export function DraftSessionClient({
         </div>
       )}
 
-      <div className="flex justify-between pt-4">
+      <div className="flex flex-wrap justify-between gap-2 pt-4">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="outline" disabled={isLoading}>
